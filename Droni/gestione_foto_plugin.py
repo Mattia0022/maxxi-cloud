@@ -36,7 +36,6 @@ class EsportazioneLayoutDialog(QDialog):
         self.setWindowTitle("Esportazione Avanzata Layout / Atlanti in PNG")
         self.resize(850, 500)
         
-        # Applicazione dello stile chiaro coerente
         self.setStyleSheet("""
             QDialog {
                 background-color: #f5f5f5;
@@ -91,7 +90,6 @@ class EsportazioneLayoutDialog(QDialog):
     def init_ui(self):
         main_layout = QHBoxLayout(self)
 
-        # 1. PANNELLO SELEZIONE LAYOUT
         box_layout = QGroupBox("1. Layout di Stampa (CTRL o SHIFT per multipli)")
         lay_box = QVBoxLayout(box_layout)
 
@@ -106,7 +104,6 @@ class EsportazioneLayoutDialog(QDialog):
 
         main_layout.addWidget(box_layout, 1)
 
-        # 2. PANNELLO OPZIONI E DESTINAZIONE
         box_opzioni = QGroupBox("2. Configurazione e Destinazione")
         lay_opzioni = QVBoxLayout(box_opzioni)
 
@@ -587,7 +584,13 @@ class GestioneFotoPlugin:
         FinalMessageDialog(msg_finale, self.plugin_dir).exec_()
 
     def esegui_opzione_3(self):
-        # Esecuzione dell'Esportazione Layout / Atlanti (Cartella Droni)
         dlg = EsportazioneLayoutDialog(self.iface.mainWindow())
         dlg.show()
         self.iface.maxxi_esportazione_dlg = dlg
+
+# ==============================================================================
+# FUNZIONE DI AVVIO GLOBALE RICHIESTA DAL LOADER
+# ==============================================================================
+def run():
+    plugin = GestioneFotoPlugin(iface)
+    plugin.run()

@@ -1,15 +1,29 @@
 {
+
   "Generici": {
+
     "Gestore Temi Mappa": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/gestore_temi_mappa.py",
+
     "Esportazione Layout in PNG": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Esportazione%20Layout%20in%20PNG.py"
+
   },
+
   "Ambiente": {},
+
   "Architettura": {},
+
   "Civile": {},
+
   "Droni": {
+
     "Gestione Foto e Layout": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/gestione_foto_plugin.py",
+
     "zio": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/zio.py"
+
   },
+
   "Impianti": {},
+
   "Strutture": {}
+
 }

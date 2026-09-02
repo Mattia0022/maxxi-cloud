@@ -1,20 +1,10 @@
 {
   "Generici": {
-    "Nome Tool Generico": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/tuo_script.py"
+    "Gestore Temi Mappa": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/gestore_temi_mappa.py"
   },
-  "Ambiente": {
-    "Analisi Acqua": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Ambiente/analisi_acqua.py"
-  },
-  "Architettura": {
-    "Nome Tool Architettura": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Architettura/tuo_script.py"
-  },
-  "Civile": {
-    "Nome Tool Civile": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Civile/tuo_script.py"
-  },
-  "Impianti": {
-    "Nome Tool Impianti": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Impianti/tuo_script.py"
-  },
-  "Strutture": {
-    "Verifica Piloni": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/refs/heads/main/verifica_piloni.py"
-  }
+  "Ambiente": {},
+  "Architettura": {},
+  "Civile": {},
+  "Impianti": {},
+  "Strutture": {}
 }

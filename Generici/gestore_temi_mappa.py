@@ -2,7 +2,7 @@ from qgis.core import QgsProject
 from qgis.utils import iface
 from qgis.PyQt.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QPushButton, 
-    QListWidget, QMessageBox, QLabel
+    QListWidget, QMessageBox, QLabel, QGroupBox
 )
 from qgis.PyQt.QtCore import Qt
 
@@ -10,13 +10,26 @@ class GestoreTemiAvanzato(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Gestore Temi Mappa Avanzato")
-        self.resize(400, 450)
+        self.resize(450, 450)
         
         self.setStyleSheet("""
             QDialog {
                 background-color: #f5f5f5;
                 color: #222222;
                 font-family: Arial, sans-serif;
+            }
+            QGroupBox {
+                border: 1px solid #dcdcdc;
+                border-radius: 6px;
+                margin-top: 10px;
+                font-weight: bold;
+                color: #333333;
+                background-color: #ffffff;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px;
             }
             QListWidget {
                 background-color: #ffffff;
@@ -36,49 +49,59 @@ class GestoreTemiAvanzato(QDialog):
                 background-color: #e5f1fb;
                 border: 1px solid #0078d7;
             }
+            QPushButton:pressed {
+                background-color: #cce4f7;
+            }
         """)
 
-        layout = QVBoxLayout(self)
-        
-        lbl = QLabel("<b>Temi mappa disponibili nel progetto:</b>")
-        layout.addWidget(lbl)
-        
-        self.lista_temi = QListWidget()
-        layout.addWidget(self.lista_temi)
-        
+        self.init_ui()
+
+    def init_ui(self):
+        main_layout = QVBoxLayout(self)
+
+        box_temi = QGroupBox("Temi Mappa Disponibili nel Progetto")
+        lay_box = QVBoxLayout(box_temi)
+
+        self.lista_widget = QListWidget()
+        lay_box.addWidget(self.lista_widget)
+        main_layout.addWidget(box_temi)
+
         self.aggiorna_lista()
-        
-        btn_layout = QHBoxLayout()
+
+        lay_btn = QHBoxLayout()
         btn_applica = QPushButton("Applica Tema")
         btn_applica.clicked.connect(self.applica_tema)
         
         btn_chiudi = QPushButton("Chiudi")
         btn_chiudi.clicked.connect(self.accept)
-        
-        btn_layout.addWidget(btn_applica)
-        btn_layout.addWidget(btn_chiudi)
-        layout.addLayout(btn_layout)
+
+        lay_btn.addWidget(btn_applica)
+        lay_btn.addWidget(btn_chiudi)
+        main_layout.addLayout(lay_btn)
 
     def aggiorna_lista(self):
-        self.lista_temi.clear()
+        self.lista_widget.clear()
         collection = QgsProject.instance().mapThemeCollection()
         temi = collection.mapThemes()
-        for tema in temi:
-            self.lista_temi.addItem(tema)
+        if temi:
+            self.lista_widget.addItems(temi)
+        else:
+            self.lista_widget.addItem("(Nessun tema mappa trovato nel progetto)")
 
     def applica_tema(self):
-        item = self.lista_temi.currentItem()
-        if not item:
-            QMessageBox.warning(self, "Attenzione", "Seleziona un tema dalla lista.")
+        item = self.lista_widget.currentItem()
+        if not item or item.text().startswith("("):
+            QMessageBox.warning(self, "Attenzione", "Seleziona un tema valido dalla lista.")
             return
-        
+
         nome_tema = item.text()
         collection = QgsProject.instance().mapThemeCollection()
-        
         canvas = iface.mapCanvas()
+        
         collection.applyTheme(nome_tema, canvas.layerTreeRoot(), canvas)
-        iface.mapCanvas().refresh()
-        QMessageBox.information(self, "Successo", f"Tema '{nome_tema}' applicato correttamente!")
+        canvas.refresh()
+        
+        QMessageBox.information(self, "Fatto!", f"Tema '{nome_tema}' applicato con successo!")
 
 def run():
     dlg = GestoreTemiAvanzato(iface.mainWindow())

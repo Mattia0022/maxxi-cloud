@@ -1,6 +1,7 @@
-
 import os
 import shutil
+from pathlib import Path
+
 from qgis.core import (
     QgsProject,
     QgsVectorFileWriter,
@@ -27,20 +28,21 @@ from PyQt5.QtWidgets import (
 from qgis.utils import iface
 
 class MenuSceltaDialog(QDialog):
-    def __init__(self, plugin_dir):
-        super().__init__()
+    def __init__(self, plugin_dir, parent=None):
+        super().__init__(parent)
         self.setWindowTitle("Gestione Foto & QGIS")
         self.resize(450, 360)
         
         layout = QVBoxLayout()
         
-        img_path = os.path.join(plugin_dir, "logo_inizio.png")
-        if os.path.exists(img_path):
-            lbl_img = QLabel()
-            pixmap = QPixmap(img_path).scaled(400, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            lbl_img.setPixmap(pixmap)
-            lbl_img.setAlignment(Qt.AlignCenter)
-            layout.addWidget(lbl_img)
+        if plugin_dir:
+            img_path = os.path.join(plugin_dir, "logo_inizio.png")
+            if os.path.exists(img_path):
+                lbl_img = QLabel()
+                pixmap = QPixmap(img_path).scaled(400, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                lbl_img.setPixmap(pixmap)
+                lbl_img.setAlignment(Qt.AlignCenter)
+                layout.addWidget(lbl_img)
             
         layout.addWidget(QLabel("<b>Seleziona l'operazione da eseguire:</b>"))
         
@@ -52,15 +54,15 @@ class MenuSceltaDialog(QDialog):
         btn_layout = QHBoxLayout()
         btn_esegui = QPushButton("Esegui")
         btn_esegui.clicked.connect(self.accept)
-        btn_esegui.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 6px;")
+        btn_esegui.setStyleSheet("background-color: #0284c7; color: white; font-weight: bold; padding: 6px; border-radius: 4px;")
         btn_layout.addWidget(btn_esegui)
         
         layout.addLayout(btn_layout)
         self.setLayout(layout)
 
 class MultiLayerSelectDialog(QDialog):
-    def __init__(self, layer_names, titolo):
-        super().__init__()
+    def __init__(self, layer_names, titolo, parent=None):
+        super().__init__(parent)
         self.setWindowTitle(titolo)
         self.resize(350, 250)
         
@@ -82,21 +84,22 @@ class MultiLayerSelectDialog(QDialog):
         return [item.text() for item in self.list_widget.selectedItems()]
 
 class ProgressDialog(QDialog):
-    def __init__(self, titolo, plugin_dir):
-        super().__init__()
+    def __init__(self, titolo, plugin_dir, parent=None):
+        super().__init__(parent)
         self.setWindowTitle(titolo)
         self.resize(450, 220)
         self.setModal(True)
         
         layout = QVBoxLayout()
         
-        img_path = os.path.join(plugin_dir, "logo_inizio.png")
-        if os.path.exists(img_path):
-            lbl_img = QLabel()
-            pixmap = QPixmap(img_path).scaled(400, 90, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            lbl_img.setPixmap(pixmap)
-            lbl_img.setAlignment(Qt.AlignCenter)
-            layout.addWidget(lbl_img)
+        if plugin_dir:
+            img_path = os.path.join(plugin_dir, "logo_inizio.png")
+            if os.path.exists(img_path):
+                lbl_img = QLabel()
+                pixmap = QPixmap(img_path).scaled(400, 90, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                lbl_img.setPixmap(pixmap)
+                lbl_img.setAlignment(Qt.AlignCenter)
+                layout.addWidget(lbl_img)
             
         self.lbl_status = QLabel("Preparazione elaborazione...")
         self.lbl_status.setAlignment(Qt.AlignCenter)
@@ -106,7 +109,7 @@ class ProgressDialog(QDialog):
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
-        self.progress_bar.setStyleSheet("QProgressBar { border: 2px solid grey; border-radius: 5px; text-align: center; } QProgressBar::chunk { background-color: #4CAF50; width: 10px; }")
+        self.progress_bar.setStyleSheet("QProgressBar { border: 2px solid grey; border-radius: 5px; text-align: center; } QProgressBar::chunk { background-color: #0284c7; width: 10px; }")
         layout.addWidget(self.progress_bar)
         
         self.setLayout(layout)
@@ -117,21 +120,22 @@ class ProgressDialog(QDialog):
         QApplication.processEvents()
 
 class FinalMessageDialog(QDialog):
-    def __init__(self, messaggio, plugin_dir):
-        super().__init__()
+    def __init__(self, messaggio, plugin_dir, parent=None):
+        super().__init__(parent)
         self.setWindowTitle("Elaborazione Completata")
         self.resize(420, 380)
-        self.setStyleSheet("background-color: #121212; color: #ffffff;")
+        self.setStyleSheet("background-color: #0f172a; color: #ffffff;")
         
         layout = QVBoxLayout()
         
-        img_path = os.path.join(plugin_dir, "logo_fine.png")
-        if os.path.exists(img_path):
-            lbl_img = QLabel()
-            pixmap = QPixmap(img_path).scaled(380, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            lbl_img.setPixmap(pixmap)
-            lbl_img.setAlignment(Qt.AlignCenter)
-            layout.addWidget(lbl_img)
+        if plugin_dir:
+            img_path = os.path.join(plugin_dir, "logo_fine.png")
+            if os.path.exists(img_path):
+                lbl_img = QLabel()
+                pixmap = QPixmap(img_path).scaled(380, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                lbl_img.setPixmap(pixmap)
+                lbl_img.setAlignment(Qt.AlignCenter)
+                layout.addWidget(lbl_img)
         
         lbl_msg = QLabel(messaggio)
         lbl_msg.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: bold;")
@@ -140,7 +144,7 @@ class FinalMessageDialog(QDialog):
         
         btn_ok = QPushButton("OK")
         btn_ok.clicked.connect(self.accept)
-        btn_ok.setStyleSheet("background-color: #333333; color: white; border: 1px solid #555555; padding: 6px; font-weight: bold;")
+        btn_ok.setStyleSheet("background-color: #1e293b; color: white; border: 1px solid #334155; padding: 6px; font-weight: bold; border-radius: 4px;")
         layout.addWidget(btn_ok)
         
         self.setLayout(layout)
@@ -148,24 +152,13 @@ class FinalMessageDialog(QDialog):
 class GestioneFotoPlugin:
     def __init__(self, iface):
         self.iface = iface
-        self.plugin_dir = os.path.dirname(__file__)
-        self.action = None
-
-    def initGui(self):
-        icon_path = os.path.join(self.plugin_dir, "icon.png")
-        icon = QIcon(icon_path) if os.path.exists(icon_path) else QIcon()
-        
-        self.action = QAction(icon, "Gestione Foto & QGIS", self.iface.mainWindow())
-        self.action.triggered.connect(self.run)
-        self.iface.addToolBarIcon(self.action)
-        self.iface.addPluginToMenu("&Gestione Foto", self.action)
-
-    def unload(self):
-        self.iface.removePluginMenu("&Gestione Foto", self.action)
-        self.iface.removeToolBarIcon(self.action)
+        try:
+            self.plugin_dir = os.path.dirname(__file__)
+        except NameError:
+            self.plugin_dir = None
 
     def run(self):
-        dialogo = MenuSceltaDialog(self.plugin_dir)
+        dialogo = MenuSceltaDialog(self.plugin_dir, self.iface.mainWindow())
         if dialogo.exec_() == QDialog.Accepted:
             scelta = dialogo.combo.currentIndex()
             if scelta == 0:
@@ -174,11 +167,11 @@ class GestioneFotoPlugin:
                 self.esegui_opzione_2()
 
     def esegui_opzione_1(self):
-        cartella_madre = QFileDialog.getExistingDirectory(None, "1/2 - Seleziona la Cartella Madre contenente le foto")
+        cartella_madre = QFileDialog.getExistingDirectory(self.iface.mainWindow(), "1/2 - Seleziona la Cartella Madre contenente le foto")
         if not cartella_madre:
             return
             
-        cartella_output = QFileDialog.getExistingDirectory(None, "2/2 - Seleziona la Cartella dove SALVARE i file SHP")
+        cartella_output = QFileDialog.getExistingDirectory(self.iface.mainWindow(), "2/2 - Seleziona la Cartella dove SALVARE i file SHP")
         if not cartella_output:
             return
 
@@ -232,13 +225,13 @@ class GestioneFotoPlugin:
                 dizionario_cartelle[nome_sottocartella] = foto_trovate
 
         if not dizionario_cartelle:
-            QMessageBox.warning(None, "Attenzione", "Nessuna foto trovata nella cartella selezionata!")
+            QMessageBox.warning(self.iface.mainWindow(), "Attenzione", "Nessuna foto trovata nella cartella selezionata!")
             return
 
         totale_foto = sum(len(v) for v in dizionario_cartelle.values())
         processate = 0
 
-        progress_dlg = ProgressDialog("Importazione Foto e Creazione Shapefile", self.plugin_dir)
+        progress_dlg = ProgressDialog("Importazione Foto e Creazione Shapefile", self.plugin_dir, self.iface.mainWindow())
         progress_dlg.show()
 
         colori = [QColor("#e41a1c"), QColor("#377eb8"), QColor("#4daf4a"), QColor("#984ea3"), QColor("#ff7f00"), QColor("#ffff33"), QColor("#a65628")]
@@ -330,17 +323,17 @@ class GestioneFotoPlugin:
 
         progress_dlg.close()
         msg_finale = f"Elaborazione riuscita!\n\nFoto georeferenziate caricate: {totale_importate}\nShapefile salvati in:\n{cartella_output}"
-        FinalMessageDialog(msg_finale, self.plugin_dir).exec_()
+        FinalMessageDialog(msg_finale, self.plugin_dir, self.iface.mainWindow()).exec_()
 
     def esegui_opzione_2(self):
         layers_progetto = QgsProject.instance().mapLayers().values()
         
         layer_poligoni_list = [l for l in layers_progetto if isinstance(l, QgsVectorLayer) and l.geometryType() == 2]
         if not layer_poligoni_list:
-            QMessageBox.warning(None, "Attenzione", "Non ci sono layer poligonali caricati nel progetto QGIS!")
+            QMessageBox.warning(self.iface.mainWindow(), "Attenzione", "Non ci sono layer poligonali caricati nel progetto QGIS!")
             return
             
-        dlg_poly = MultiLayerSelectDialog([l.name() for l in layer_poligoni_list], "Seleziona Layer Poligonali")
+        dlg_poly = MultiLayerSelectDialog([l.name() for l in layer_poligoni_list], "Seleziona Layer Poligonali", self.iface.mainWindow())
         if dlg_poly.exec_() != QDialog.Accepted:
             return
         poly_scelti_nomi = dlg_poly.get_selected_layers()
@@ -349,16 +342,16 @@ class GestioneFotoPlugin:
         layers_poligoni_selezionati = [l for l in layer_poligoni_list if l.name() in poly_scelti_nomi]
         
         campi = [f.name() for f in layers_poligoni_selezionati[0].fields()]
-        campo_scelto, ok = QInputDialog.getItem(None, "Campo Identificativo", "Seleziona il campo del poligono:", campi, 0, False)
+        campo_scelto, ok = QInputDialog.getItem(self.iface.mainWindow(), "Campo Identificativo", "Seleziona il campo del poligono:", campi, 0, False)
         if not ok:
             return
 
         layer_punti_list = [l for l in layers_progetto if isinstance(l, QgsVectorLayer) and l.geometryType() == 0]
         if not layer_punti_list:
-            QMessageBox.warning(None, "Attenzione", "Non ci sono layer puntuali (foto) caricati nel progetto QGIS!")
+            QMessageBox.warning(self.iface.mainWindow(), "Attenzione", "Non ci sono layer puntuali (foto) caricati nel progetto QGIS!")
             return
             
-        dlg_punti = MultiLayerSelectDialog([l.name() for l in layer_punti_list], "Seleziona Layer Punti Foto")
+        dlg_punti = MultiLayerSelectDialog([l.name() for l in layer_punti_list], "Seleziona Layer Punti Foto", self.iface.mainWindow())
         if dlg_punti.exec_() != QDialog.Accepted:
             return
         punti_scelti_nomi = dlg_punti.get_selected_layers()
@@ -366,7 +359,7 @@ class GestioneFotoPlugin:
             return
         layers_punti_selezionati = [l for l in layer_punti_list if l.name() in punti_scelti_nomi]
 
-        cartella_destinazione = QFileDialog.getExistingDirectory(None, "Seleziona la cartella radice di destinazione")
+        cartella_destinazione = QFileDialog.getExistingDirectory(self.iface.mainWindow(), "Seleziona la cartella radice di destinazione")
         if not cartella_destinazione:
             return
 
@@ -374,7 +367,7 @@ class GestioneFotoPlugin:
         processate = 0
         copiate = 0
 
-        progress_dlg = ProgressDialog("Esportazione e Copia Foto su Poligoni", self.plugin_dir)
+        progress_dlg = ProgressDialog("Esportazione e Copia Foto su Poligoni", self.plugin_dir, self.iface.mainWindow())
         progress_dlg.show()
 
         for layer_punto in layers_punti_selezionati:
@@ -421,7 +414,7 @@ class GestioneFotoPlugin:
 
         progress_dlg.close()
         msg_finale = f"Processo completato!\n\nSono state copiate e organizzate {copiate} foto nelle sottocartelle dei poligoni dentro:\n{cartella_destinazione}"
-        FinalMessageDialog(msg_finale, self.plugin_dir).exec_()
+        FinalMessageDialog(msg_finale, self.plugin_dir, self.iface.mainWindow()).exec_()
 
 def run():
     plugin = GestioneFotoPlugin(iface)

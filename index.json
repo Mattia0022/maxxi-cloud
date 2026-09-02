@@ -6,7 +6,9 @@
   "Ambiente": {},
   "Architettura": {},
   "Civile": {},
-  "Droni": {},
+  "Droni": {
+    "Gestione Foto e Layout": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/gestione_foto_plugin.py"
+  },
   "Impianti": {},
   "Strutture": {}
 }

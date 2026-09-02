@@ -1,6 +1,7 @@
 {
   "Generici": {
-    "Gestore Temi Mappa": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/gestore_temi_mappa.py"
+    "Gestore Temi Mappa": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/gestore_temi_mappa.py",
+    "Esportazione Layout in PNG": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Esportazione%20Layout%20in%20PNG.py"
   },
   "Ambiente": {},
   "Architettura": {},

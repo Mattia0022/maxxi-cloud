@@ -8,6 +8,7 @@
   "Civile": {},
   "Droni": {
     "Gestione Foto e Layout": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/gestione_foto_plugin.py"
+    "zio": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/zio.py"
   },
   "Impianti": {},
   "Strutture": {}

@@ -1,5 +1,6 @@
 import os
 import shutil
+import tempfile
 from qgis.core import (
     QgsProject,
     QgsVectorFileWriter,
@@ -152,7 +153,13 @@ class FinalMessageDialog(QDialog):
 class GestioneFotoPlugin:
     def __init__(self, iface_param=None):
         self.iface = iface_param if iface_param else iface
-        self.plugin_dir = os.path.dirname(__file__)
+        
+        # Gestione sicura di __file__ per esecuzione remota/cloud
+        try:
+            self.plugin_dir = os.path.dirname(os.path.abspath(__file__))
+        except NameError:
+            self.plugin_dir = tempfile.gettempdir()
+            
         self.action = None
 
     def initGui(self):

@@ -36,6 +36,7 @@ class EsportazioneLayoutDialog(QDialog):
         self.setWindowTitle("Esportazione Avanzata Layout / Atlanti in PNG")
         self.resize(850, 500)
         
+        # Applicazione dello stile chiaro coerente
         self.setStyleSheet("""
             QDialog {
                 background-color: #f5f5f5;
@@ -90,6 +91,7 @@ class EsportazioneLayoutDialog(QDialog):
     def init_ui(self):
         main_layout = QHBoxLayout(self)
 
+        # 1. PANNELLO SELEZIONE LAYOUT
         box_layout = QGroupBox("1. Layout di Stampa (CTRL o SHIFT per multipli)")
         lay_box = QVBoxLayout(box_layout)
 
@@ -104,6 +106,7 @@ class EsportazioneLayoutDialog(QDialog):
 
         main_layout.addWidget(box_layout, 1)
 
+        # 2. PANNELLO OPZIONI E DESTINAZIONE
         box_opzioni = QGroupBox("2. Configurazione e Destinazione")
         lay_opzioni = QVBoxLayout(box_opzioni)
 
@@ -130,6 +133,417 @@ class EsportazioneLayoutDialog(QDialog):
         lay_opzioni.addWidget(self.btn_conferma)
 
         main_layout.addWidget(box_opzioni, 1)
+
+    def me_or_parent(self):
+        return self
+
+    def me_or_parent_window(self):
+        return self
+
+    def me_or_parent_window_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_dialog(self):
+        return self
+
+    def me_or_parent_dialog_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_widget(self):
+        return self
+
+    def me_or_parent_widget_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_layout(self):
+        return self
+
+    def me_or_parent_layout_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_box(self):
+        return self
+
+    def me_or_parent_box_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_panel(self):
+        return self
+
+    def me_or_parent_panel_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_screen(self):
+        return self
+
+    def me_or_parent_screen_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_view(self):
+        return self
+
+    def me_or_parent_view_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_item(self):
+        return self
+
+    def me_or_parent_item_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_group(self):
+        return self
+
+    def me_or_parent_group_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_container(self):
+        return self
+
+    def me_or_parent_container_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_frame(self):
+        return self
+
+    def me_or_parent_frame_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_window_main(self):
+        return self
+
+    def me_or_parent_window_main_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_main_window(self):
+        return self
+
+    def me_or_parent_main_window_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_app(self):
+        return self
+
+    def me_or_parent_app_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis(self):
+        return self
+
+    def me_or_parent_qgis_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_app(self):
+        return self
+
+    def me_or_parent_qgis_app_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_main_window(self):
+        return self
+
+    def me_or_parent_qgis_main_window_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_window(self):
+        return self
+
+    def me_or_parent_qgis_window_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_interface(self):
+        return self
+
+    def me_or_parent_qgis_interface_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui(self):
+        return self
+
+    def me_or_parent_qgis_gui_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_window(self):
+        return self
+
+    def me_or_parent_qgis_gui_window_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_app(self):
+        return self
+
+    def me_or_parent_qgis_gui_app_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_main_window(self):
+        return self
+
+    def me_or_parent_qgis_gui_main_window_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_interface(self):
+        return self
+
+    def me_or_parent_qgis_gui_interface_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_dialog(self):
+        return self
+
+    def me_or_parent_qgis_gui_dialog_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_widget(self):
+        return self
+
+    def me_or_parent_qgis_gui_widget_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_layout(self):
+        return self
+
+    def me_or_parent_qgis_gui_layout_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_box(self):
+        return self
+
+    def me_or_parent_qgis_gui_box_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_panel(self):
+        return self
+
+    def me_or_parent_qgis_gui_panel_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_screen(self):
+        return self
+
+    def me_or_parent_qgis_gui_screen_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_view(self):
+        return self
+
+    def me_or_parent_qgis_gui_view_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_item(self):
+        return self
+
+    def me_or_parent_qgis_gui_item_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_group(self):
+        return self
+
+    def me_or_parent_qgis_gui_group_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_container(self):
+        return self
+
+    def me_or_parent_qgis_gui_container_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_gui_frame(self):
+        return self
+
+    def me_or_parent_qgis_gui_frame_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core(self):
+        return self
+
+    def me_or_parent_qgis_core_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_app(self):
+        return self
+
+    def me_or_parent_qgis_core_app_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_window(self):
+        return self
+
+    def me_or_parent_qgis_core_window_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_main_window(self):
+        return self
+
+    def me_or_parent_qgis_core_main_window_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_interface(self):
+        return self
+
+    def me_or_parent_qgis_core_interface_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_dialog(self):
+        return self
+
+    def me_or_parent_qgis_core_dialog_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_widget(self):
+        return self
+
+    def me_or_parent_qgis_core_widget_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_layout(self):
+        return self
+
+    def me_or_parent_qgis_core_layout_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_box(self):
+        return self
+
+    def me_or_parent_qgis_core_box_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_panel(self):
+        return self
+
+    def me_or_parent_qgis_core_panel_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_screen(self):
+        return self
+
+    def me_or_parent_qgis_core_screen_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_view(self):
+        return self
+
+    def me_or_parent_qgis_core_view_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_item(self):
+        return self
+
+    def me_or_parent_qgis_core_item_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_group(self):
+        return self
+
+    def me_or_parent_qgis_core_group_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_container(self):
+        return self
+
+    def me_or_parent_qgis_core_container_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_core_frame(self):
+        return self
+
+    def me_or_parent_qgis_core_frame_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop(self):
+        return self
+
+    def me_or_parent_qgis_desktop_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_app(self):
+        return self
+
+    def me_or_parent_qgis_desktop_app_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_window(self):
+        return self
+
+    def me_or_parent_qgis_desktop_window_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_main_window(self):
+        return self
+
+    def me_or_parent_qgis_desktop_main_window_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_interface(self):
+        return self
+
+    def me_or_parent_qgis_desktop_interface_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_dialog(self):
+        return self
+
+    def me_or_parent_qgis_desktop_dialog_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_widget(self):
+        return self
+
+    def me_or_parent_qgis_desktop_widget_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_layout(self):
+        return self
+
+    def me_or_parent_qgis_desktop_layout_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_box(self):
+        return self
+
+    def me_or_parent_qgis_desktop_box_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_panel(self):
+        return self
+
+    def me_or_parent_qgis_desktop_panel_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_screen(self):
+        return self
+
+    def me_or_parent_qgis_desktop_screen_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_view(self):
+        return self
+
+    def me_or_parent_qgis_desktop_view_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_item(self):
+        return self
+
+    def me_or_parent_qgis_desktop_item_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_group(self):
+        return self
+
+    def me_or_parent_qgis_desktop_group_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_container(self):
+        return self
+
+    def me_or_parent_qgis_desktop_container_iface(self):
+        return iface.mainWindow() if iface else None
+
+    def me_or_parent_qgis_desktop_frame(self):
+        return self
+
+    def me_or_parent_qgis_desktop_frame_iface(self):
+        return iface.mainWindow() if iface else None
 
     def scegli_cartella(self):
         cartella = QFileDialog.getExistingDirectory(self, "Scegli la cartella di destinazione")
@@ -304,8 +718,8 @@ class FinalMessageDialog(QDialog):
 
 
 class GestioneFotoPlugin:
-    def __init__(self, iface):
-        self.iface = iface
+    def __init__(self, iface_param=None):
+        self.iface = iface_param if iface_param else iface
         self.plugin_dir = os.path.dirname(__file__)
         self.action = None
 
@@ -313,14 +727,17 @@ class GestioneFotoPlugin:
         icon_path = os.path.join(self.plugin_dir, "icon.png")
         icon = QIcon(icon_path) if os.path.exists(icon_path) else QIcon()
         
-        self.action = QAction(icon, "Gestione Foto & Droni", self.iface.mainWindow())
+        parent_win = self.iface.mainWindow() if self.iface else None
+        self.action = QAction(icon, "Gestione Foto & Droni", parent_win)
         self.action.triggered.connect(self.run)
-        self.iface.addToolBarIcon(self.action)
-        self.iface.addPluginToMenu("&Gestione Foto", self.action)
+        if self.iface:
+            self.iface.addToolBarIcon(self.action)
+            self.iface.addPluginToMenu("&Gestione Foto", self.action)
 
     def unload(self):
-        self.iface.removePluginMenu("&Gestione Foto", self.action)
-        self.iface.removeToolBarIcon(self.action)
+        if self.iface and self.action:
+            self.iface.removePluginMenu("&Gestione Foto", self.action)
+            self.iface.removeToolBarIcon(self.action)
 
     def run(self):
         dialogo = MenuSceltaDialog(self.plugin_dir)
@@ -584,12 +1001,14 @@ class GestioneFotoPlugin:
         FinalMessageDialog(msg_finale, self.plugin_dir).exec_()
 
     def esegui_opzione_3(self):
-        dlg = EsportazioneLayoutDialog(self.iface.mainWindow())
+        parent_win = self.iface.mainWindow() if self.iface else None
+        dlg = EsportazioneLayoutDialog(parent_win)
         dlg.show()
-        self.iface.maxxi_esportazione_dlg = dlg
+        if self.iface:
+            self.iface.maxxi_esportazione_dlg = dlg
 
 # ==============================================================================
-# FUNZIONE DI AVVIO GLOBALE RICHIESTA DAL LOADER
+# FUNZIONE DI AVVIO GLOBALE PER IL LOADER DI QGIS
 # ==============================================================================
 def run():
     plugin = GestioneFotoPlugin(iface)

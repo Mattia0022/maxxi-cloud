@@ -5,7 +5,7 @@ from qgis.PyQt.QtWidgets import (
 )
 from qgis.PyQt.QtCore import Qt
 from qgis.core import QgsProject
-from qgis.utils import iface
+import qgis.utils
 
 class GestoreTemiAvanzato(QDialog):
     def __init__(self, parent=None):
@@ -247,7 +247,7 @@ class GestoreTemiAvanzato(QDialog):
             return
 
         root = self.project.layerTreeRoot()
-        model = iface.layerTreeView().layerTreeModel()
+        model = qgis.utils.iface.layerTreeView().layerTreeModel()
 
         for nome_tema in temi_sel:
             # 1. Applica il tema per caricarne lo stato attuale
@@ -280,7 +280,7 @@ class GestoreTemiAvanzato(QDialog):
                 return
 
             root = self.project.layerTreeRoot()
-            model = iface.layerTreeView().layerTreeModel()
+            model = qgis.utils.iface.layerTreeView().layerTreeModel()
             rec = self.themes.createThemeFromCurrentState(root, model)
             self.themes.insert(nome, rec)
             self.carica_temi()
@@ -296,6 +296,6 @@ class GestoreTemiAvanzato(QDialog):
             self.carica_temi()
 
 def run():
-    dlg = GestoreTemiAvanzato(iface.mainWindow())
+    dlg = GestoreTemiAvanzato(qgis.utils.iface.mainWindow())
     dlg.show()
-    iface.maxxi_tema_dlg = dlg
+    qgis.utils.iface.maxxi_tema_dlg = dlg

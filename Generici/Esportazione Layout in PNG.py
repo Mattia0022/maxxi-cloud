@@ -3,17 +3,16 @@ from qgis.core import QgsProject, QgsLayoutExporter
 from qgis.utils import iface
 from qgis.PyQt.QtWidgets import (
     QFileDialog, QMessageBox, QListWidget, QDialog, QVBoxLayout, 
-    QHBoxLayout, QPushButton, QAbstractItemView, QGroupBox, QLabel, QLineEdit
+    QHBoxLayout, QPushButton, QAbstractItemView, QGroupBox, QLabel, QLineEdit, QWidget, QTextEdit
 )
 from qgis.PyQt.QtCore import Qt
 
 class EsportazioneLayoutDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, guida_testo="", parent=None):
         super().__init__(parent)
         self.setWindowTitle("Esportazione Avanzata Layout / Atlanti in PNG")
-        self.resize(850, 500)
+        self.resize(1100, 500)
         
-        # Applicazione dello stile chiaro coerente con il gestore temi
         self.setStyleSheet("""
             QDialog {
                 background-color: #f5f5f5;
@@ -63,14 +62,20 @@ class EsportazioneLayoutDialog(QDialog):
             }
         """)
 
-        self.init_ui()
+        self.init_ui(guida_testo)
 
-    def init_ui(self):
+    def init_ui(self, guida_testo):
         main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(12, 12, 12, 12)
+        main_layout.setSpacing(12)
 
-        # =====================================================
-        # 1. PANNELLO SELEZIONE LAYOUT
-        # =====================================================
+        # --- 1. INTERFACCIA DEL TOOL (A SINISTRA) ---
+        widget_interfaccia = QWidget()
+        widget_interfaccia.setStyleSheet("background: transparent;")
+        layout_tool = QHBoxLayout(widget_interfaccia)
+        layout_tool.setContentsMargins(0, 0, 0, 0)
+
+        # Box 1: Layout di Stampa
         box_layout = QGroupBox("1. Layout di Stampa (CTRL o SHIFT per multipli)")
         lay_box = QVBoxLayout(box_layout)
 
@@ -83,11 +88,9 @@ class EsportazioneLayoutDialog(QDialog):
         self.lista_widget.addItems(self.tutti_i_layout)
         lay_box.addWidget(self.lista_widget)
 
-        main_layout.addWidget(box_layout, 1)
+        layout_tool.addWidget(box_layout, 1)
 
-        # =====================================================
-        # 2. PANNELLO OPZIONI E DESTINAZIONE
-        # =====================================================
+        # Box 2: Configurazione e Destinazione
         box_opzioni = QGroupBox("2. Configurazione e Destinazione")
         lay_opzioni = QVBoxLayout(box_opzioni)
 
@@ -113,7 +116,26 @@ class EsportazioneLayoutDialog(QDialog):
         self.btn_conferma.clicked.connect(self.avvia_esportazione)
         lay_opzioni.addWidget(self.btn_conferma)
 
-        main_layout.addWidget(box_opzioni, 1)
+        layout_tool.addWidget(box_opzioni, 1)
+        main_layout.addWidget(widget_interfaccia, stretch=3)
+
+        # --- 2. PANNELLO GUIDA (A DESTRA) ---
+        widget_guida = QWidget()
+        widget_guida.setStyleSheet("background-color: #ffffff; border: 1px solid #dcdcdc; border-radius: 8px;")
+        layout_dx = QVBoxLayout(widget_guida)
+        layout_dx.setContentsMargins(8, 8, 8, 8)
+
+        lbl_titolo_guida = QLabel("📖 Guida Passo-Passo")
+        lbl_titolo_guida.setStyleSheet("color: #0078d7; font-weight: bold; font-size: 13px; border: none; background: transparent; margin-bottom: 4px;")
+        layout_dx.addWidget(lbl_titolo_guida)
+
+        txt_guida = QTextEdit()
+        txt_guida.setReadOnly(True)
+        txt_guida.setHtml(f"<div style='color: #333333; font-size: 12px; line-height: 1.5;'>{guida_testo}</div>")
+        txt_guida.setStyleSheet("background-color: #ffffff; color: #222222; border: 1px solid #cccccc; border-radius: 4px; padding: 8px;")
+        layout_dx.addWidget(txt_guida)
+
+        main_layout.addWidget(widget_guida, stretch=1)
 
     def scegli_cartella(self):
         cartella = QFileDialog.getExistingDirectory(self, "Scegli la cartella di destinazione", "C:\\Users\\userm\\Desktop")
@@ -136,7 +158,7 @@ class EsportazioneLayoutDialog(QDialog):
             return
 
         percorso_out = Path(cartella_destinazione)
-        print(f"Inizio esportazione di {len(layout_scelti)} elementi in formato PNG (mantenendo il CRS di progetto)...\n" + "-"*50)
+        print(f"Inizio esportazione di {len(layout_scelti)} elementi in formato PNG...\n" + "-"*50)
         
         immagini_generate = 0
         impostazioni_immagine = QgsLayoutExporter.ImageExportSettings()
@@ -169,6 +191,7 @@ class EsportazioneLayoutDialog(QDialog):
         self.accept()
 
 def run():
-    dlg = EsportazioneLayoutDialog(iface.mainWindow())
+    guida_testo = globals().get("MAXXI_GUIDA", "Nessuna guida disponibile.")
+    dlg = EsportazioneLayoutDialog(guida_testo, iface.mainWindow())
     dlg.show()
     iface.maxxi_esportazione_dlg = dlg

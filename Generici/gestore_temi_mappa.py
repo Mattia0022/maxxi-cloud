@@ -86,6 +86,7 @@ class GestoreTemiAvanzato(QDialog):
         lay_azioni.addWidget(btn_rimuovi_sel)
         lay_layer.addLayout(lay_azioni)
 
+        # Aggiunto correttamente al layout principale
         main_layout.addWidget(box_layer, 2)
 
         # =====================================================
@@ -112,7 +113,6 @@ class GestoreTemiAvanzato(QDialog):
     # UTILITIES PER ESTRARRE I LAYER DI UN TEMA
     # ----------------------------------------------------
     def estrai_ids_visibili_tema(self, nome_tema):
-        """Estrae gli ID dei layer visibili da un dato tema."""
         ids_visibili = set()
         record = self.themes.mapThemeState(nome_tema)
 
@@ -149,7 +149,6 @@ class GestoreTemiAvanzato(QDialog):
             self.tabella.setRowCount(0)
             return
 
-        # LOGICA INTERSEZIONE: Calcola quali layer sono visibili in TUTTI i temi selezionati
         ids_in_tutti = self.estrai_ids_visibili_tema(temi_sel[0])
         for nome_tema in temi_sel[1:]:
             ids_in_tutti = ids_in_tutti.intersection(self.estrai_ids_visibili_tema(nome_tema))
@@ -170,7 +169,6 @@ class GestoreTemiAvanzato(QDialog):
             item_chk = QTableWidgetItem()
             item_chk.setFlags(Qt.ItemIsSelectable | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
             
-            # Mette la spunta SOLO SE il layer è presente in tutti i temi selezionati
             if layer.id() in ids_in_tutti:
                 item_chk.setCheckState(Qt.Checked)
             else:
@@ -220,16 +218,13 @@ class GestoreTemiAvanzato(QDialog):
         model = iface.layerTreeView().layerTreeModel()
 
         for nome_tema in temi_sel:
-            # 1. Applica il tema per caricarne lo stato attuale
             self.themes.applyTheme(nome_tema, root, model)
 
-            # 2. Modifica la visibilità dei layer scelti
             for lid in layer_ids:
                 node = root.findLayer(lid)
                 if node:
                     node.setItemVisibilityChecked(rendi_visibile)
 
-            # 3. Aggiorna lo stato salvato del tema
             rec = self.themes.createThemeFromCurrentState(root, model)
             self.themes.insert(nome_tema, rec)
 

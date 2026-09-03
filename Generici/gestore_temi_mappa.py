@@ -2,26 +2,36 @@ from qgis.utils import iface
 from qgis.PyQt.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QListWidget, 
     QPushButton, QLineEdit, QGroupBox, QMessageBox, QInputDialog,
-    QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView
+    QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
+    QWidget, QTextEdit
 )
 from qgis.PyQt.QtCore import Qt
 from qgis.core import QgsProject
 
 class GestoreTemiAvanzato(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, guida_testo="", parent=None):
         super().__init__(parent)
         self.setWindowTitle("Gestore Temi Mappa")
-        self.resize(1000, 600)
+        self.resize(1200, 600)
+        self.setStyleSheet("background-color: #0f172a; color: #f8fafc;")
 
         self.project = QgsProject.instance()
         self.themes = self.project.mapThemeCollection()
         self.caricamento = False
 
-        self.init_ui()
+        self.init_ui(guida_testo)
         self.carica_temi()
 
-    def init_ui(self):
-        layout = QHBoxLayout(self)
+    def init_ui(self, guida_testo):
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(12, 12, 12, 12)
+        main_layout.setSpacing(12)
+
+        # --- 1. INTERFACCIA DEL TOOL (A SINISTRA) ---
+        widget_interfaccia = QWidget()
+        widget_interfaccia.setStyleSheet("background: transparent;")
+        layout_tool = QHBoxLayout(widget_interfaccia)
+        layout_tool.setContentsMargins(0, 0, 0, 0)
 
         box_temi = QGroupBox("1. Temi Mappa (CTRL per multipli)")
         lay_temi = QVBoxLayout(box_temi)
@@ -40,7 +50,7 @@ class GestoreTemiAvanzato(QDialog):
         lay_btns.addWidget(btn_del)
         lay_temi.addLayout(lay_btns)
 
-        layout.addWidget(box_temi, 1)
+        layout_tool.addWidget(box_temi, 1)
 
         box_layer = QGroupBox("2. Visibilità Layer (Spunta = presente in TUTTI i temi sel.)")
         lay_layer = QVBoxLayout(box_layer)
@@ -65,8 +75,8 @@ class GestoreTemiAvanzato(QDialog):
         btn_aggiungi_sel = QPushButton("➕ Aggiungi Layer Sel. ai Temi Sel.")
         btn_rimuovi_sel = QPushButton("➖ Rimuovi Layer Sel. dai Temi Sel.")
         
-        btn_aggiungi_sel.setStyleSheet("font-weight: bold; background-color: #e1f5fe;")
-        btn_rimuovi_sel.setStyleSheet("font-weight: bold; background-color: #ffebee;")
+        btn_aggiungi_sel.setStyleSheet("font-weight: bold; background-color: #0369a1; color: white; border-radius: 6px; padding: 6px;")
+        btn_rimuovi_sel.setStyleSheet("font-weight: bold; background-color: #1e293b; color: #f8fafc; border: 1px solid #334155; border-radius: 6px; padding: 6px;")
         
         btn_aggiungi_sel.clicked.connect(lambda: self.applica_azione_multipla(True))
         btn_rimuovi_sel.clicked.connect(lambda: self.applica_azione_multipla(False))
@@ -75,7 +85,26 @@ class GestoreTemiAvanzato(QDialog):
         lay_azioni.addWidget(btn_rimuovi_sel)
         lay_layer.addLayout(lay_azioni)
 
-        layout.addWidget(box_layer, 2)
+        layout_tool.addWidget(box_layer, 2)
+        main_layout.addWidget(widget_interfaccia, stretch=3)
+
+        # --- 2. PANNELLO GUIDA (A DESTRA) ---
+        widget_guida = QWidget()
+        widget_guida.setStyleSheet("background-color: #0f172a; border-radius: 8px;")
+        layout_dx = QVBoxLayout(widget_guida)
+        layout_dx.setContentsMargins(0, 0, 0, 0)
+
+        lbl_titolo_guida = QLabel("📖 Guida Passo-Passo")
+        lbl_titolo_guida.setStyleSheet("color: #38bdf8; font-weight: bold; font-size: 13px; border: none; background: transparent; margin-bottom: 4px;")
+        layout_dx.addWidget(lbl_titolo_guida)
+
+        txt_guida = QTextEdit()
+        txt_guida.setReadOnly(True)
+        txt_guida.setHtml(f"<div style='color: #cbd5e1; font-size: 12px; line-height: 1.5;'>{guida_testo}</div>")
+        txt_guida.setStyleSheet("background-color: #1e293b; color: #f8fafc; border: 1px solid #334155; border-radius: 8px; padding: 8px;")
+        layout_dx.addWidget(txt_guida)
+
+        main_layout.addWidget(widget_guida, stretch=1)
 
     def estrai_ids_visibili_tema(self, nome_tema):
         ids_visibili = set()
@@ -217,6 +246,7 @@ class GestoreTemiAvanzato(QDialog):
             self.carica_temi()
 
 def run():
-    dlg = GestoreTemiAvanzato(iface.mainWindow())
+    guida_testo = globals().get("MAXXI_GUIDA", "Nessuna guida disponibile.")
+    dlg = GestoreTemiAvanzato(guida_testo, iface.mainWindow())
     dlg.show()
     iface.maxxi_temi_dlg = dlg

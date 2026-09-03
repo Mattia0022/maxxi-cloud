@@ -1,14 +1,30 @@
 {
   "Generici": {
-    "Gestore Temi Mappa": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/gestore_temi_mappa.py",
-    "Esportazione Layout in PNG": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Esportazione%20Layout%20in%20PNG.py"
+    "Gestore Temi Mappa": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/gestore_temi_mappa.py",
+      "descrizione": "Automatizza la gestione dei temi di mappa e controlla istantaneamente la visibilità dei layer tematici nel progetto QGIS attivo.",
+      "guida": "1. Apri lo strumento dal pannello principale.<br>2. Seleziona il tema desiderato dall'elenco a discesa.<br>3. Applica la configurazione per aggiornare la vista mappa."
+    },
+    "Esportazione Layout in PNG": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Esportazione%20Layout%20in%20PNG.py",
+      "descrizione": "Esporta in blocco tutti i layout di stampa configurati in file immagine PNG ad altissima risoluzione, ideali per report e presentazioni tecniche.",
+      "guida": "1. Seleziona il layout di stampa di interesse.<br>2. Scegli la cartella di destinazione e definisci la risoluzione (DPI).<br>3. Avvia l'esportazione automatica."
+    }
   },
   "Ambiente": {},
   "Architettura": {},
   "Civile": {},
   "Droni": {
-    "Gestione Foto e Layout": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/gestione_foto_plugin.py",
-    "Rinomina File Metashape": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/rinomina_file_metashape.py"
+    "Gestione Foto e Layout": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/gestione_foto_plugin.py",
+      "descrizione": "Ottimizza l'archiviazione, l'associazione e l'impaginazione rapida delle fotografie aeree da drone all'interno dei layout cartografici.",
+      "guida": "1. Specifica la directory di origine contenente le foto georeferenziate.<br>2. Verifica l'associazione degli scatti con i punti o i vettori.<br>3. Genera la struttura grafica o il report di stampa."
+    },
+    "Rinomina File Metashape": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/rinomina_file_metashape.py",
+      "descrizione": "Rinomina automaticamente e in blocco i file di piano o gli elaborati da Agisoft Metashape secondo le convenzioni di nomenclatura standard.",
+      "guida": "1. Seleziona la cartella di lavoro contenente i file da elaborare.<br>2. Controlla l'anteprima delle modifiche nella tabella di riscontro.<br>3. Clicca su 'Applica Rinominazione' per confermare."
+    }
   },
   "Impianti": {},
   "Strutture": {}

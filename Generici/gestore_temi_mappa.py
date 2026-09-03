@@ -1,9 +1,9 @@
 from qgis.utils import iface
 from qgis.PyQt.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListWidget, 
+    QDialog, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem,
     QPushButton, QLineEdit, QGroupBox, QMessageBox, QInputDialog,
     QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
-    QWidget, QTextEdit, QLabel, QFrame
+    QWidget, QTextEdit, QLabel
 )
 from qgis.PyQt.QtCore import Qt
 from qgis.core import QgsProject
@@ -13,10 +13,6 @@ class GestoreTemiAvanzato(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Gestore Temi Mappa")
         self.resize(1200, 600)
-        
-        # --- STILE MODIFICATO PER SOMIGLIARE ALLA FOTO ---
-        # rimosso foglio stile scuro, usiamo quello di default di Qt/QGIS (nativo)
-        self.setStyleSheet("")
 
         self.project = QgsProject.instance()
         self.themes = self.project.mapThemeCollection()
@@ -26,28 +22,23 @@ class GestoreTemiAvanzato(QDialog):
         self.carica_temi()
 
     def init_ui(self, guida_testo):
-        # Layout principale che contiene tutto
+        # Layout principale orizzontale a tre sezioni
         main_layout = QHBoxLayout(self)
-        main_layout.setContentsMargins(15, 15, 15, 15)
-        main_layout.setSpacing(10)
+        main_layout.setContentsMargins(12, 12, 12, 12)
+        main_layout.setSpacing(12)
 
-        # --- 1. COLONNA SINISTRA (Lista Temi) ---
-        container_sx = QWidget()
-        lay_sx = QVBoxLayout(container_sx)
-        lay_sx.setContentsMargins(0,0,0,0)
-
+        # =====================================================
+        # 1. PANNELLO TEMI MAPPA (A SINISTRA)
+        # =====================================================
         box_temi = QGroupBox("1. Temi Mappa (CTRL per multipli)")
         lay_temi = QVBoxLayout(box_temi)
-        lay_temi.setContentsMargins(5, 5, 5, 5)
 
         self.lista_temi = QListWidget()
         self.lista_temi.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.lista_temi.itemSelectionChanged.connect(self.aggiorna_vista_layer)
         lay_temi.addWidget(self.lista_temi)
 
-        # Pulsanti sotto la lista (stile standard come da foto)
         lay_btns = QHBoxLayout()
-        lay_btns.setSpacing(5)
         btn_add = QPushButton("+ Nuovo Tema")
         btn_del = QPushButton("- Elimina Temi")
         btn_add.clicked.connect(self.crea_tema)
@@ -56,37 +47,22 @@ class GestoreTemiAvanzato(QDialog):
         lay_btns.addWidget(btn_del)
         lay_temi.addLayout(lay_btns)
 
-        lay_sx.addWidget(box_temi)
-        main_layout.addWidget(container_sx, stretch=1)
+        main_layout.addWidget(box_temi, 1)
 
-        # --- 2. COLONNA CENTRALE (Gestione Layer) ---
-        container_centro = QWidget()
-        lay_centro = QVBoxLayout(container_centro)
-        lay_centro.setContentsMargins(0,0,0,0)
-
-        box_layer = QGroupBox("2. Configurazione Layer e Azioni")
+        # =====================================================
+        # 2. PANNELLO LAYER E AZIONI MULTIPLE (AL CENTRO)
+        # =====================================================
+        box_layer = QGroupBox("2. Visibilità Layer (Spunta = presente in TUTTI i temi sel.)")
         lay_layer = QVBoxLayout(box_layer)
-        lay_layer.setContentsMargins(5, 5, 5, 5)
 
-        # Sottotitoli informativi fissi (come da foto)
-        lbl_info1 = QLabel("• Stato visibilità layer nei temi selezionati.")
-        lbl_info1.setStyleSheet("color: #555; font-style: italic; margin-bottom: 2px;")
-        lbl_info2 = QLabel("• Spunta = presente in TUTTI i temi selezionati.")
-        lbl_info2.setStyleSheet("color: #555; font-style: italic; margin-bottom: 5px;")
-        
-        lay_layer.addWidget(lbl_info1)
-        lay_layer.addWidget(lbl_info2)
-
-        # Barra di ricerca
         self.search_layer = QLineEdit()
         self.search_layer.setPlaceholderText("Cerca layer...")
         self.search_layer.textChanged.connect(self.filtra_layer)
         lay_layer.addWidget(self.search_layer)
 
-        # Tabella
         self.tabella = QTableWidget()
         self.tabella.setColumnCount(2)
-        self.tabella.setHorizontalHeaderLabels(["Layer Progetto", "Visibile in tutti"])
+        self.tabella.setHorizontalHeaderLabels(["Layer Progetto", "Presente in TUTTI i Temi"])
         self.tabella.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.tabella.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         
@@ -95,61 +71,48 @@ class GestoreTemiAvanzato(QDialog):
         self.tabella.itemChanged.connect(self.modifica_spunta_singola)
         lay_layer.addWidget(self.tabella)
 
-        # Area Azioni Multipliche (spostata in basso, stile standard)
-        frame_azioni = QFrame()
-        frame_azioni.setFrameShape(QFrame.StyledPanel)
-        frame_azioni.setStyleSheet("background-color: #f0f0f0; border-radius: 4px;")
-        lay_frame = QVBoxLayout(frame_azioni)
-        lay_frame.setContentsMargins(5,5,5,5)
-        lay_frame.addWidget(QLabel("<b>Azioni su layer selezionati nei temi attivi:</b>"))
-
-        lay_azioni_btns = QHBoxLayout()
-        btn_aggiungi_sel = QPushButton("➕ Aggiungi")
-        btn_rimuovi_sel = QPushButton("➖ Rimuovi")
+        # Pulsanti di azione di gruppo
+        lay_azioni = QHBoxLayout()
+        btn_aggiungi_sel = QPushButton("➕ Aggiungi Layer Sel. ai Temi Sel.")
+        btn_rimuovi_sel = QPushButton("➖ Rimuovi Layer Sel. dai Temi Sel.")
         
-        # Stile pulsanti principale/secondario standard
-        btn_aggiungi_sel.setStyleSheet("font-weight: bold; padding: 4px;")
-        btn_rimuovi_sel.setStyleSheet("padding: 4px;")
+        btn_aggiungi_sel.setStyleSheet("font-weight: bold; background-color: #e1f5fe; border-radius: 4px; padding: 6px;")
+        btn_rimuovi_sel.setStyleSheet("font-weight: bold; background-color: #ffebee; border-radius: 4px; padding: 6px;")
         
         btn_aggiungi_sel.clicked.connect(lambda: self.applica_azione_multipla(True))
         btn_rimuovi_sel.clicked.connect(lambda: self.applica_azione_multipla(False))
         
-        lay_azioni_btns.addWidget(btn_aggiungi_sel)
-        lay_azioni_btns.addWidget(btn_rimuovi_sel)
-        lay_frame.addLayout(lay_azioni_btns)
+        lay_azioni.addWidget(btn_aggiungi_sel)
+        lay_azioni.addWidget(btn_rimuovi_sel)
+        lay_layer.addLayout(lay_azioni)
 
-        lay_layer.addWidget(frame_azioni)
+        main_layout.addWidget(box_layer, 2)
 
-        container_centro.setLayout(lay_layer)
-        main_layout.addWidget(container_centro, stretch=2)
-
-        # --- 3. COLONNA DESTRA (Guida Passo-Passo) ---
+        # =====================================================
+        # 3. PANNELLO GUIDA PASSO-PASSO (A DESTRA)
+        # =====================================================
         widget_guida = QWidget()
-        # Sfondo leggermente grigio per il pannello guida come nella foto
-        widget_guida.setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px;")
+        widget_guida.setStyleSheet("background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px;")
         layout_dx = QVBoxLayout(widget_guida)
         layout_dx.setContentsMargins(10, 10, 10, 10)
 
         lbl_titolo_guida = QLabel("📖 Guida Passo-Passo")
-        lbl_titolo_guida.setStyleSheet("color: #0055cc; font-weight: bold; font-size: 14px; border: none; background: transparent;")
+        lbl_titolo_guida.setStyleSheet("color: #0284c7; font-weight: bold; font-size: 13px; border: none; background: transparent; margin-bottom: 4px;")
         layout_dx.addWidget(lbl_titolo_guida)
 
         txt_guida = QTextEdit()
         txt_guida.setReadOnly(True)
-        # Testo guida formattato con HTML
-        formatted_guida = f"<div style='font-family: sans-serif; color: #333; font-size: 12px;'>{guida_testo}</div>"
-        txt_guida.setHtml(formatted_guida)
+        txt_guida.setHtml(f"<div style='color: #334155; font-size: 12px; line-height: 1.5;'>{guida_testo}</div>")
         txt_guida.setStyleSheet("border: none; background: transparent;")
         layout_dx.addWidget(txt_guida)
 
-        # Spazio vuoto sotto per allineare in alto
-        layout_dx.addStretch()
-
         main_layout.addWidget(widget_guida, stretch=1)
 
-    # --- Metodi di Logica (Invariati, solo adattati ai nuovi nomi UI se necessario) ---
-
+    # ----------------------------------------------------
+    # UTILITIES PER ESTRARRE I LAYER DI UN TEMA
+    # ----------------------------------------------------
     def estrai_ids_visibili_tema(self, nome_tema):
+        """Estrae gli ID dei layer visibili da un dato tema."""
         ids_visibili = set()
         record = self.themes.mapThemeState(nome_tema)
 
@@ -166,6 +129,9 @@ class GestoreTemiAvanzato(QDialog):
 
         return ids_visibili
 
+    # ----------------------------------------------------
+    # CARICAMENTO DATI CON LOGICA INTERSEZIONE
+    # ----------------------------------------------------
     def carica_temi(self):
         self.lista_temi.blockSignals(True)
         self.lista_temi.clear()
@@ -183,6 +149,7 @@ class GestoreTemiAvanzato(QDialog):
             self.tabella.setRowCount(0)
             return
 
+        # LOGICA INTERSEZIONE: Calcola quali layer sono visibili in TUTTI i temi selezionati
         ids_in_tutti = self.estrai_ids_visibili_tema(temi_sel[0])
         for nome_tema in temi_sel[1:]:
             ids_in_tutti = ids_in_tutti.intersection(self.estrai_ids_visibili_tema(nome_tema))
@@ -203,6 +170,7 @@ class GestoreTemiAvanzato(QDialog):
             item_chk = QTableWidgetItem()
             item_chk.setFlags(Qt.ItemIsSelectable | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
             
+            # Mette la spunta SOLO SE il layer è presente in tutti i temi selezionati
             if layer.id() in ids_in_tutti:
                 item_chk.setCheckState(Qt.Checked)
             else:
@@ -214,6 +182,9 @@ class GestoreTemiAvanzato(QDialog):
         self.caricamento = False
         self.filtra_layer(self.search_layer.text())
 
+    # ----------------------------------------------------
+    # MODIFICHE SINGOLE E MULTIPLE
+    # ----------------------------------------------------
     def modifica_spunta_singola(self, item):
         if self.caricamento or item.column() != 1:
             return
@@ -249,16 +220,22 @@ class GestoreTemiAvanzato(QDialog):
         model = iface.layerTreeView().layerTreeModel()
 
         for nome_tema in temi_sel:
+            # 1. Applica il tema per caricarne lo stato attuale
             self.themes.applyTheme(nome_tema, root, model)
 
+            # 2. Modifica la visibilità dei layer scelti
             for lid in layer_ids:
                 node = root.findLayer(lid)
                 if node:
                     node.setItemVisibilityChecked(rendi_visibile)
 
+            # 3. Aggiorna lo stato salvato del tema
             rec = self.themes.createThemeFromCurrentState(root, model)
             self.themes.insert(nome_tema, rec)
 
+    # ----------------------------------------------------
+    # UTILITY
+    # ----------------------------------------------------
     def filtra_layer(self, testo):
         for row in range(self.tabella.rowCount()):
             nome = self.tabella.item(row, 0).text()
@@ -289,17 +266,13 @@ class GestoreTemiAvanzato(QDialog):
             self.carica_temi()
 
 def run():
-    # Esempio di testo guida formattato HTML
-    guida_html = """
-    <b>Gestione Semplificata Temi Mappa</b>
-    <ol>
-        <li style='margin-bottom: 5px;'>Seleziona uno o più temi dalla lista a sinistra (usa CTRL). I layer comuni appariranno nella tabella centrale.</li>
-        <li style='margin-bottom: 5px;'>Usa la casella di ricerca per trovare rapidamente un layer.</li>
-        <li style='margin-bottom: 5px;'>Cambia lo stato di visibilità usando le caselle di controllo nella colonna "Visibile in tutti". La modifica verrà applicata istantaneamente a *tutti* i temi selezionati.</li>
-        <li>In alternativa, seleziona i layer nella tabella e usa i pulsanti in basso "Aggiungi" o "Rimuovi".</li>
-    </ol>
+    guida_testo = """
+    1. Seleziona uno o più temi dalla lista a sinistra (usa CTRL per selezioni multiple).<br><br>
+    2. Nella tabella centrale vedrai l'elenco dei layer: la spunta indica se il layer è visibile in <b>tutti</b> i temi selezionati.<br><br>
+    3. Modifica direttamente le spunte o usa i pulsanti in basso per aggiungere/rimuovere in blocco i layer selezionati dai temi attivi.
     """
-    
-    dlg = GestoreTemiAvanzato(guida_html, iface.mainWindow())
+    dlg = GestoreTemiAvanzato(guida_testo, iface.mainWindow())
     dlg.show()
     iface.maxxi_temi_dlg = dlg
+
+run()

@@ -9,6 +9,11 @@
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Esportazione%20Layout%20in%20PNG.py",
       "descrizione": "Esporta in blocco tutti i layout di stampa configurati in file immagine PNG ad altissima risoluzione, ideali per report e presentazioni tecniche.",
       "guida": "1. Seleziona il layout di stampa di interesse.<br>2. Scegli la cartella di destinazione e definisci la risoluzione (DPI).<br>3. Avvia l'esportazione automatica."
+    },
+    "Modifica Simbologia Layer": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Modifica%20simbologia%20dei%20layer.py",
+      "descrizione": "Associa automaticamente icone SVG ai layer vettoriali in base ai valori degli attributi, applicando un fallback per i file mancanti.",
+      "guida": "1. Seleziona il layer vettoriale e il campo attributo corrispondente.<br>2. Scegli la cartella contenente le icone SVG.<br>3. Avvia l'associazione per aggiornare la simbologia."
     }
   },
   "Ambiente": {},

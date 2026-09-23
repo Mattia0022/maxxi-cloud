@@ -9,7 +9,7 @@ from qgis.PyQt.QtWidgets import (
     QFileDialog, QMessageBox, QListWidget, QDialog, QVBoxLayout, 
     QHBoxLayout, QPushButton, QAbstractItemView, QGroupBox, QLabel, QLineEdit, QWidget, QTextEdit, QComboBox
 )
-from qgs.PyQt.QtCore import Qt  # oppure qgis.PyQt.QtCore se preferisci
+from qgis.PyQt.QtCore import Qt
 
 class AssociazioneSvgDialog(QDialog):
     def __init__(self, guida_testo="", parent=None):

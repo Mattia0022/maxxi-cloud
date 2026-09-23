@@ -29,6 +29,11 @@
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/rinomina_file_metashape.py",
       "descrizione": "Rinomina automaticamente e in blocco i file di piano o gli elaborati da Agisoft Metashape secondo le convenzioni di nomenclatura standard.",
       "guida": "1. Seleziona la cartella di lavoro contenente i file da elaborare.<br>2. Controlla l'anteprima delle modifiche nella tabella di riscontro.<br>3. Clicca su 'Applica Rinominazione' per confermare."
+    },
+    "Sezioni trasversali a partire dai punti GNSS": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/Sezioni%20trasversali%20a%20partire%20dai%20punti%20GNSS.py",
+      "descrizione": "Estrae le coordinate e le quote da punti GNSS selezionati per generare script AutoCAD (.scr) di profili e sezioni trasversali proiettate.",
+      "guida": "1. Seleziona il layer di punti e i punti desiderati sulla mappa.<br>2. Scegli la colonna della quota o la geometria 3D.<br>3. Salva e genera lo script AutoCAD."
     }
   },
   "Impianti": {},

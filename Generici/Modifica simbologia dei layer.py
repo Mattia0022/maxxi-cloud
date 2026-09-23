@@ -151,7 +151,6 @@ class AssociazioneSvgDialog(QDialog):
 
         main_layout.addWidget(widget_guida, stretch=1)
 
-        # Seleziona il primo elemento di default se disponibile
         if self.layers_dict:
             self.lista_layer.setCurrentRow(0)
 

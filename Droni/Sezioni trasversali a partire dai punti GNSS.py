@@ -237,8 +237,61 @@ class SezioniTrasversaliDialog(QDialog):
         for pt in raw_pts:
             u = ((pt['x'] - p_start['x']) * dx + (pt['y'] - p_start['y']) * dy) / lunghezza_asse_sq
             progressiva = u * lunghezza_asse
-            x_proj = p_start['Certamente! Però mi manca un dettaglio fondamentale: **di che tipo di script hai bisogno**? 
+            x_proj = p_start['x'] + u * dx
+            y_proj = p_start['y'] + u * dy
 
-Stai cercando un codice di programmazione (in Python, JavaScript, Bash, ecc.) per automatizzare qualcosa, oppure un copione per un video o una presentazione? 
+            dati_profilo.append({
+                'prog': progressiva,
+                'z': pt['z'],
+                'x_real': pt['x'],
+                'y_real': pt['y'],
+                'x_proj': x_proj,
+                'y_proj': y_proj
+            })
 
-Fammi sapere i dettagli e te lo preparo subito!
+        dati_profilo.sort(key=lambda item: item['prog'])
+
+        try:
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write("_CMDECHO 0\n")
+                f.write("_OSMODE 0\n")
+
+                f.write("_PLINE\n")
+                for item in dati_profilo:
+                    f.write(f"{item['prog']:.3f},{item['z']:.3f}\n")
+                f.write("\n")
+
+                for item in dati_profilo:
+                    f.write(f"_TEXT {item['prog']:.3f},{item['z'] + 0.5:.3f} 0.3 90 Q={item['z']:.2f}\n")
+                    f.write(f"_TEXT {item['prog']:.3f},{item['z'] - 1.5:.3f} 0.3 90 P={item['prog']:.2f}m\n")
+
+                f.write("_3DPOLY\n")
+                for item in dati_profilo:
+                    f.write(f"{item['x_proj']:.3f},{item['y_proj']:.3f},{item['z']:.3f}\n")
+                f.write("\n")
+
+                f.write("_ZOOM _E\n")
+                f.write("_CMDECHO 1\n")
+
+            QMessageBox.information(
+                self, "Completato", 
+                f"Script AutoCAD generato con successo!\n"
+                f"Lunghezza Asse Sezione: {lunghezza_asse:.2f} m\n"
+                f"Punti elaborati: {len(dati_profilo)}"
+            )
+            self.accept()
+        except Exception as e:
+            QMessageBox.critical(self, "Errore", f"Impossibile scrivere il file:\n{str(e)}")
+
+def run():
+    guida_testo = (
+        "<b>1. Selezione dei punti sulla mappa:</b><br>"
+        "Prima di aprire questo strumento, usa gli strumenti di selezione nativi di QGIS per selezionare almeno <b>2 punti</b> lungo l'asse della sezione.<br><br>"
+        "<b>2. Verifica e Scelta Quota:</b><br>"
+        "Seleziona il layer di punti dal menu a tendina e indica se estrarre la quota dalla coordinata Z geometrica 3D o da una colonna degli attributi.<br><br>"
+        "<b>3. Esportazione Script:</b><br>"
+        "Scegli la cartella/file di destinazione ed esegui il comando in AutoCAD (comando <code>SCRIPT</code>) per importare automaticamente il profilo e la polilinea 3D."
+    )
+    dlg = SezioniTrasversaliDialog(guida_testo, iface.mainWindow())
+    dlg.show()
+    iface.maxxi_sezioni_dlg = dlg

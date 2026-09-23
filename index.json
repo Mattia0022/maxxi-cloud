@@ -14,6 +14,11 @@
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Modifica%20simbologia%20dei%20layer.py",
       "descrizione": "Associa automaticamente icone SVG ai layer vettoriali in base ai valori degli attributi, applicando un fallback per i file mancanti.",
       "guida": "1. Seleziona il layer vettoriale e il campo attributo corrispondente.<br>2. Scegli la cartella contenente le icone SVG.<br>3. Avvia l'associazione per aggiornare la simbologia."
+    },
+    "Esportazione in serie gruppo kml_kmz": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Esportazione%20in%20serie%20gruppo%20kml_kmz.py",
+      "descrizione": "Esporta in serie i layer vettoriali di un gruppo selezionato in formato KML o KMZ, riproiettandoli automaticamente in EPSG:32632.",
+      "guida": "1. Seleziona il gruppo di layer nel pannello laterale.<br>2. Spunta i layer desiderati dalla finestra di dialogo.<br>3. Scegli il formato e la cartella di destinazione per completare l'esportazione."
     }
   },
   "Ambiente": {},

@@ -119,7 +119,7 @@ class ImpaginazioneProADialog(QDialog):
         main_layout.addWidget(widget_guida, stretch=1)
 
     # ----------------------------------------------------
-    # UTILITIES PER LA SELEZIONE E L'ANTEPRIMA (CORRETTE CON iface.mainWindow())
+    # UTILITIES PER LA SELEZIONE E L'ANTEPRIMA
     # ----------------------------------------------------
     def seleziona_origine(self):
         dir_path = QFileDialog.getExistingDirectory(iface.mainWindow(), "Seleziona la cartella di ORIGINE con le immagini")
@@ -156,7 +156,7 @@ class ImpaginazioneProADialog(QDialog):
             contatore += 1
 
     # ----------------------------------------------------
-    # ESECUZIONE DEL PROCESSO
+    # ESECUZIONE DEL PROCESSO TRAMITE SCRIPT CAD (.scr)
     # ----------------------------------------------------
     def esegui_processo(self):
         origine = self.txt_origine.text()
@@ -203,7 +203,7 @@ class ImpaginazioneProADialog(QDialog):
             self.accept()
             return
 
-        # FASE 2: Automazione ProA
+        # FASE 2: Generazione del file script CAD (.scr)
         def enum_windows_callback(hwnd, extra):
             title = win32gui.GetWindowText(hwnd)
             if "ProA" in title or "progeCAD" in title or "icad" in title.lower():
@@ -219,6 +219,7 @@ class ImpaginazioneProADialog(QDialog):
             win32gui.SetForegroundWindow(hwnd)
             time.sleep(0.3)
 
+            # Scrittura dei comandi nel file di script .scr
             cmd_script = "FILEDIA 0\n_TILEMODE 0\n"
 
             # FASE A: Duplica il layout iniziale pulito per ogni immagine
@@ -253,14 +254,27 @@ class ImpaginazioneProADialog(QDialog):
 
             cmd_script += "FILEDIA 1\n"
 
-            QApplication.clipboard().setText(cmd_script)
+            # Salvataggio del file .scr nella cartella di destinazione
+            scr_path = os.path.join(destinazione, "impaginazione_proa.scr")
+            try:
+                with open(scr_path, "w", encoding="utf-8") as f:
+                    f.write(cmd_script)
+            except Exception as e:
+                QMessageBox.warning(self, "Errore", f"Impossibile creare il file script: {e}")
+                return
+
+            # Comando pulito da inviare a ProA per eseguire lo script in un sol colpo
+            scr_path_clean = scr_path.replace("\\", "/")
+            comando_lancio = f"_SCRIPT\n\"{scr_path_clean}\"\n"
+
+            QApplication.clipboard().setText(comando_lancio)
             shell.SendKeys('{ESC}{ESC}')
             time.sleep(0.2)
             shell.SendKeys('^v')
             time.sleep(0.3)
             shell.SendKeys('{ENTER}')
             
-            QMessageBox.information(self, "Successo", f"Rinominate {len(img_paths)} immagini e inviate a ProA con successo!")
+            QMessageBox.information(self, "Successo", f"Rinominate {len(img_paths)} immagini e script avviato su ProA con successo!")
             self.accept()
         else:
             QMessageBox.warning(self, "Errore", "Non trovo ProA aperto sul desktop! Apri prima il file CAD in ProA.")

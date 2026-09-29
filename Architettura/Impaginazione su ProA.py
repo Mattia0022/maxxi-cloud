@@ -2,7 +2,6 @@ import os
 import shutil
 import time
 import re
-import tempfile
 from qgis.utils import iface
 from qgis.PyQt.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, 
@@ -16,10 +15,8 @@ try:
     import win32con
     import win32com.client
     shell = win32com.client.Dispatch("WScript.Shell")
-    WIN32_ATTIVO = True
 except ImportError:
     shell = None
-    WIN32_ATTIVO = False
 
 class ImpaginazioneProADialog(QDialog):
     def __init__(self, parent=None):
@@ -96,6 +93,7 @@ class ImpaginazioneProADialog(QDialog):
             self.txt_destinazione.setText(dir_path)
 
     def pulisci_nome(self, stem):
+        # Rimuove prefissi brevi iniziali lasciando intatte le parole
         nuovo = re.sub(r'^[a-zA-Z0-9]{1,3}[_\\.\-\s]+\s*', '', stem)
         return nuovo.strip().capitalize()
 
@@ -120,15 +118,6 @@ class ImpaginazioneProADialog(QDialog):
             self.tabella_file.setItem(idx, 1, QTableWidgetItem(nuovo_nome))
 
     def esegui_processo(self):
-        # 1. CONTROLLO PRELIMINARE WIN32
-        if not WIN32_ATTIVO or shell is None:
-            QMessageBox.critical(
-                self, "Errore Critico", 
-                "Le librerie win32 non sono installate o attive in QGIS!\n"
-                "Segui la guida per installare 'pywin32' tramite OSGeo4W Shell."
-            )
-            return
-
         origine = self.txt_origine.text()
         destinazione = self.txt_destinazione.text()
         scale_str = self.txt_scala.text().strip() or "1000"
@@ -141,34 +130,6 @@ class ImpaginazioneProADialog(QDialog):
             QMessageBox.warning(self, "Attenzione", "Seleziona una cartella di destinazione valida!")
             return
 
-        # 2. CERCA LA FINESTRA CAD PRIMA DI TOCCARE I FILE
-        print("--- INIZIO RICERCA FINESTRA PROA / CAD ---")
-        top_windows = []
-        def enum_windows_callback(hwnd, extra):
-            title = win32gui.GetWindowText(hwnd)
-            if title and win32gui.IsWindowVisible(hwnd):
-                # Stampa nella console di QGIS tutte le finestre visibili per debug
-                print(f"Finestra trovata -> {title}")
-                title_lower = title.lower()
-                # Aggiungi qui sotto eventuali altre parole chiave se ProA ha un nome particolare
-                if any(k in title_lower for k in ["proa", "progecad", "icad", "autocad", "oem", "dwg", "cad"]):
-                    extra.append((hwnd, title))
-
-        win32gui.EnumWindows(enum_windows_callback, top_windows)
-
-        if not top_windows:
-            print("ERRORE: Nessuna finestra CAD compatibile trovata!")
-            QMessageBox.warning(
-                self, "Errore Finestra CAD", 
-                "Nessuna finestra ProA/CAD trovata sul desktop!\n\n"
-                "Controlla la Console di Python di QGIS per vedere i nomi esatti delle finestre aperte."
-            )
-            return
-
-        hwnd, titolo_rilevato = top_windows[0]
-        print(f"==> Finestra CAD agganciata con successo: {titolo_rilevato}")
-
-        # 3. ELABORAZIONE E COPIA FILE
         os.makedirs(destinazione, exist_ok=True)
         estensioni_valide = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.tiff')
 
@@ -178,6 +139,7 @@ class ImpaginazioneProADialog(QDialog):
             QMessageBox.warning(self, "Errore", f"Impossibile leggere i file:\n{e}")
             return
 
+        # FASE 1: Rinomina e copia i file nella cartella di destinazione
         img_paths = []
         for idx, filename in enumerate(files):
             percorso_origine = os.path.join(origine, filename)
@@ -194,61 +156,87 @@ class ImpaginazioneProADialog(QDialog):
             QMessageBox.warning(self, "Attenzione", "Nessuna immagine valida trovata nella cartella origine!")
             return
 
-        # 4. PORTA IN PRIMO PIANO PROA E CREA SCRIPT .SCR
-        self.hide()
-        QApplication.processEvents()
-        time.sleep(0.5)
-
-        try:
-            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-            shell.SendKeys('%')
-            win32gui.SetForegroundWindow(hwnd)
-            time.sleep(0.5)
-        except Exception as e:
-            print(f"Errore attivazione finestra: {e}")
-            QMessageBox.warning(None, "Errore Focus", f"Impossibile attivare la finestra CAD:\n{e}")
-            self.show()
+        if shell is None:
+            QMessageBox.information(self, "Completato", f"Rinominate {len(img_paths)} immagini.\nLibrerie win32 non disponibili per l'automazione CAD.")
+            self.accept()
             return
 
-        # Generazione comandi
-        cmd_script = "FILEDIA 0\n_TILEMODE 0\n"
+        # FASE 2: Ricerca della finestra di ProA con la tua logica esatta
+        def enum_windows_callback(hwnd, extra):
+            title = win32gui.GetWindowText(hwnd)
+            if title and win32gui.IsWindowVisible(hwnd):
+                if "ProA" in title or "progecad" in title or "icad" in title.lower():
+                    extra.append(hwnd)
 
-        for img_path in img_paths:
-            layout_name = os.path.splitext(os.path.basename(img_path))[0]
-            cmd_script += f"-LAYOUT\n_CO\n\n{layout_name}\n"
+        top_windows = []
+        win32gui.EnumWindows(enum_windows_callback, top_windows)
 
-        for img_path in img_paths:
-            img_path_clean = img_path.replace("\\", "/")
-            layout_name = os.path.splitext(os.path.basename(img_path))[0]
-            cmd_script += (
-                f"-LAYOUT\n_SET\n{layout_name}\n"
-                f"-IMAGE\n_ATTACH\n\"{img_path_clean}\"\n"
-                f"0,0\n{scale_str}\n0\n"
-                f"_DRAWORDER\n_L\n\n_BACK\n"
-            )
+        if top_windows:
+            hwnd = top_windows[0]
+            self.hide()
+            QApplication.processEvents()
+            time.sleep(0.3)
 
-        cmd_script += "FILEDIA 1\n"
+            try:
+                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                shell.SendKeys('%')
+                win32gui.SetForegroundWindow(hwnd)
+                time.sleep(0.3)
+            except Exception as e:
+                QMessageBox.warning(None, "Errore Focus", f"Impossibile attivare la finestra CAD:\n{e}")
+                self.show()
+                return
 
-        # Scrittura file .scr temporaneo
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.scr', delete=False, encoding='utf-8') as tmp:
-            tmp.write(cmd_script)
-            script_path = tmp.name
-        
-        script_path_clean = script_path.replace("\\", "/")
-        cad_command = f"_SCRIPT\n{script_path_clean}\n"
+            # Inizio blocco comandi globali
+            cmd_script = "FILEDIA 0\n_TILEMODE 0\n"
 
-        # Invio a ProA
-        QApplication.clipboard().setText(cad_command)
-        shell.SendKeys('{ESC}{ESC}')
-        time.sleep(0.3)
-        shell.SendKeys('^v')
-        time.sleep(0.4)
-        shell.SendKeys('{ENTER}')
+            # FASE 2A: Duplica il layout iniziale pulito per ogni immagine
+            for img_path in img_paths:
+                layout_name = os.path.splitext(os.path.basename(img_path))[0]
+                cmd_script += (
+                    "-LAYOUT\n"
+                    "_CO\n"
+                    "\n"  # Copia il layout corrente pulito
+                    f"{layout_name}\n"
+                )
 
-        QMessageBox.information(None, "Successo", f"Rinominate {len(img_paths)} immagini e inviate a ProA tramite file .scr!")
-        self.close()
+            # FASE 2B: Entra nei singoli layout creati, inserisce la foto e la porta dietro
+            for img_path in img_paths:
+                img_path_clean = img_path.replace("\\", "/")
+                layout_name = os.path.splitext(os.path.basename(img_path))[0]
+                cmd_script += (
+                    "-LAYOUT\n"
+                    "_SET\n"
+                    f"{layout_name}\n"
+                    "-IMAGE\n"
+                    "_ATTACH\n"
+                    f'"{img_path_clean}"\n'
+                    "0,0\n"
+                    f"{scale_str}\n"
+                    "0\n"
+                    "_DRAWORDER\n"
+                    "_L\n"
+                    "\n"
+                    "_BACK\n"
+                )
+
+            cmd_script += "FILEDIA 1\n"
+
+            # Incolla ed esegue l'intera sequenza di comandi in ProA
+            QApplication.clipboard().setText(cmd_script)
+            shell.SendKeys('{ESC}{ESC}')
+            time.sleep(0.2)
+            shell.SendKeys('^v')
+            time.sleep(0.3)
+            shell.SendKeys('{ENTER}')
+            
+            QMessageBox.information(None, "Successo", f"Rinominate {len(img_paths)} immagini e impaginate in ProA!")
+            self.close()
+        else:
+            QMessageBox.warning(self, "Errore", "Non trovo ProA aperto sul desktop! Apri prima il file CAD in ProA.")
+            self.show()
 
 def run():
-    """Punto di ingresso principale per QGIS / Script Runner"""
+    """Punto di avvio principale per QGIS"""
     dlg = ImpaginazioneProADialog()
     dlg.exec_()

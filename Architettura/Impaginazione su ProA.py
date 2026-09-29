@@ -77,7 +77,7 @@ class ImpaginazioneProADialog(QDialog):
 
         # 3. Pulsante Avvio
         self.btn_avvia = QPushButton("🚀 Avvia Rinomina e Invia a ProA")
-        self.btn_avvia.setStyleSheet("font-weight: bold; padding: 12px; font-size: 14px; background-color: #d1fae5;")
+        self.btn_avvia.setStyleSheet("font-weight: bold; padding: 10px; font-size: 13px;")
         self.btn_avvia.clicked.connect(self.esegui_processo)
         main_layout.addWidget(self.btn_avvia)
 
@@ -155,35 +155,37 @@ class ImpaginazioneProADialog(QDialog):
             return
 
         if shell is None:
-            QMessageBox.information(self, "Completato", f"Rinominate {len(img_paths)} immagini.\nLibrerie di automazione non disponibili.")
+            QMessageBox.information(self, "Completato", f"Rinominate {len(img_paths)} immagini.\nLibrerie win32 non disponibili.")
             self.accept()
             return
 
-        # Ricerca della finestra CAD attiva sul desktop
+        # Automazione ProA con debug stampato nella console di QGIS
+        print("--- RICERCA FINESTRA CAD IN CORSO ---")
         top_windows = []
         def enum_windows_callback(hwnd, extra):
             title = win32gui.GetWindowText(hwnd)
             if title and win32gui.IsWindowVisible(hwnd):
                 title_lower = title.lower()
                 if any(k in title_lower for k in ["proa", "progecad", "icad", "autocad", "oem", "dwg", "cad"]):
-                    if win32gui.IsWindowEnabled(hwnd):
-                        extra.append((hwnd, title))
+                    extra.append((hwnd, title))
 
         win32gui.EnumWindows(enum_windows_callback, top_windows)
+        print(f"Finestre CAD compatibili trovate: {len(top_windows)}")
 
         if top_windows:
             hwnd, titolo_rilevato = top_windows[0]
+            print(f"Selezionata finestra CAD: {titolo_rilevato}")
             self.hide()
             QApplication.processEvents()
             time.sleep(0.5)
 
             try:
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                time.sleep(0.2)
-                shell.SendKeys('%')  # Sblocca le restrizioni di focus di Windows
+                shell.SendKeys('%')
                 win32gui.SetForegroundWindow(hwnd)
                 time.sleep(0.5)
             except Exception as e:
+                print(f"Errore attivazione finestra: {e}")
                 QMessageBox.warning(None, "Errore Focus", f"Impossibile attivare la finestra CAD:\n{e}")
                 self.show()
                 return
@@ -207,20 +209,22 @@ class ImpaginazioneProADialog(QDialog):
             cmd_script += "FILEDIA 1\n"
 
             QApplication.clipboard().setText(cmd_script)
-            time.sleep(0.3)
+            print("Comandi copiati negli appunti, invio a ProA...")
             shell.SendKeys('{ESC}{ESC}')
             time.sleep(0.3)
             shell.SendKeys('^v')
             time.sleep(0.4)
             shell.SendKeys('{ENTER}')
+            print("Comandi inviati con successo!")
 
-            QMessageBox.information(None, "Successo", f"Rinominate {len(img_paths)} immagini e inviate automaticamente a ProA!")
+            QMessageBox.information(None, "Successo", f"Rinominate {len(img_paths)} immagini e inviate a ProA!")
             self.close()
         else:
-            QMessageBox.warning(self, "Errore", "Nessuna finestra ProA/CAD trovata aperta sul desktop!")
+            print("ERRORE: Nessuna finestra CAD trovata con i filtri attuali!")
+            QMessageBox.warning(self, "Errore", "Nessuna finestra ProA/CAD aperta sul desktop o titolo non riconosciuto!")
             self.show()
 
 def run():
-    """Punto di ingresso principale per QGIS"""
+    """Punto di ingresso principale per QGIS / Script Runner"""
     dlg = ImpaginazioneProADialog()
     dlg.exec_()

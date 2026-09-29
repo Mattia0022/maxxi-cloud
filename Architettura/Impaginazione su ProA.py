@@ -6,7 +6,7 @@ from qgis.utils import iface
 from qgis.PyQt.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, 
     QGroupBox, QMessageBox, QTableWidget, QTableWidgetItem, 
-    QHeaderView, QAbstractItemView, QWidget, QTextEdit, QLabel
+    QHeaderView, QAbstractItemView, QWidget, QTextEdit, QLabel, QApplication, QFileDialog
 )
 from qgis.PyQt.QtCore import Qt
 from qgis.core import QgsProject
@@ -119,16 +119,16 @@ class ImpaginazioneProADialog(QDialog):
         main_layout.addWidget(widget_guida, stretch=1)
 
     # ----------------------------------------------------
-    # UTILITIES PER LA SELEZIONE E L'ANTEPRIMA
+    # UTILITIES PER LA SELEZIONE E L'ANTEPRIMA (CORRETTE CON iface.mainWindow())
     # ----------------------------------------------------
     def seleziona_origine(self):
-        dir_path = QFileDialog.getExistingDirectory(self, "Seleziona la cartella di ORIGINE con le immagini")
+        dir_path = QFileDialog.getExistingDirectory(iface.mainWindow(), "Seleziona la cartella di ORIGINE con le immagini")
         if dir_path:
             self.txt_origine.setText(dir_path)
             self.aggiorna_anteprima()
 
     def seleziona_destinazione(self):
-        dir_path = QFileDialog.getExistingDirectory(self, "Seleziona la cartella di DESTINAZIONE")
+        dir_path = QFileDialog.getExistingDirectory(iface.mainWindow(), "Seleziona la cartella di DESTINAZIONE")
         if dir_path:
             self.txt_destinazione.setText(dir_path)
 
@@ -148,7 +148,7 @@ class ImpaginazioneProADialog(QDialog):
         for idx, filename in enumerate(files):
             stem, ext = os.path.splitext(filename)
             nuovo_nome_base = re.sub(r'^[a-zA-Z0-9]{1,3}[_\\.]\s*', '', stem)
-            nuovo_nome_base = nuvo_nome_base.strip().capitalize() if 'nuvo_nome_base' in locals() else nuovo_nome_base.strip().capitalize()
+            nuovo_nome_base = nuovo_nome_base.strip().capitalize()
             nuovo_nome = f"{contatore}. {nuovo_nome_base}{ext}"
 
             self.tabella_file.setItem(idx, 0, QTableWidgetItem(filename))
@@ -274,5 +274,3 @@ def run():
     dlg = ImpaginazioneProADialog(guida_testo, iface.mainWindow())
     dlg.show()
     iface.impaginazione_proa_dlg = dlg
-
-run()

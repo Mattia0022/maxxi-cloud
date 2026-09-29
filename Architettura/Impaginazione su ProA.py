@@ -9,13 +9,16 @@ from qgis.PyQt.QtWidgets import (
     QHeaderView, QAbstractItemView, QLabel, QApplication, QFileDialog
 )
 
-# Importazione dei moduli per comunicare con ProA
+# Importazione dei moduli per comunicare con ProA (Windows API)
 try:
     import win32gui
     import win32con
     import win32com.client
+    import win32api
+    WIN32_DISPONIBILE = True
     shell = win32com.client.Dispatch("WScript.Shell")
 except ImportError:
+    WIN32_DISPONIBILE = False
     shell = None
 
 class ImpaginazioneProADialog(QDialog):
@@ -77,7 +80,7 @@ class ImpaginazioneProADialog(QDialog):
 
         # 3. Pulsante Avvio
         self.btn_avvia = QPushButton("🚀 Avvia Rinomina e Invia a ProA")
-        self.btn_avvia.setStyleSheet("font-weight: bold; padding: 10px; font-size: 13px;")
+        self.btn_avvia.setStyleSheet("font-weight: bold; padding: 12px; font-size: 14px; background-color: #d1fae5;")
         self.btn_avvia.clicked.connect(self.esegui_processo)
         main_layout.addWidget(self.btn_avvia)
 
@@ -154,12 +157,18 @@ class ImpaginazioneProADialog(QDialog):
             QMessageBox.warning(self, "Attenzione", "Nessuna immagine valida trovata!")
             return
 
-        if shell is None:
-            QMessageBox.information(self, "Completato", f"Rinominate {len(img_paths)} immagini.\nLibrerie win32 non disponibili.")
+        if not WIN32_DISPONIBILE:
+            QMessageBox.warning(
+                self, "Librerie Mancanti", 
+                f"Rinominate {len(img_paths)} immagini.\n\nATTENZIONE: Le librerie win32 non sono installate in QGIS. "
+                "Per abilitare l'invio automatico a ProA, installa 'pywin32' tramite OSGeo4W Shell."
+            )
             self.accept()
             return
 
-        # Automazione ProA con debug stampato nella console di QGIS
+        # -------------------------------------------------------------
+        # SECONDA PARTE: Automazione e invio a ProA
+        # -------------------------------------------------------------
         print("--- RICERCA FINESTRA CAD IN CORSO ---")
         top_windows = []
         def enum_windows_callback(hwnd, extra):
@@ -167,7 +176,8 @@ class ImpaginazioneProADialog(QDialog):
             if title and win32gui.IsWindowVisible(hwnd):
                 title_lower = title.lower()
                 if any(k in title_lower for k in ["proa", "progecad", "icad", "autocad", "oem", "dwg", "cad"]):
-                    extra.append((hwnd, title))
+                    if win32gui.IsWindowEnabled(hwnd):
+                        extra.append((hwnd, title))
 
         win32gui.EnumWindows(enum_windows_callback, top_windows)
         print(f"Finestre CAD compatibili trovate: {len(top_windows)}")
@@ -175,13 +185,15 @@ class ImpaginazioneProADialog(QDialog):
         if top_windows:
             hwnd, titolo_rilevato = top_windows[0]
             print(f"Selezionata finestra CAD: {titolo_rilevato}")
+            
             self.hide()
             QApplication.processEvents()
             time.sleep(0.5)
 
             try:
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                shell.SendKeys('%')
+                time.sleep(0.2)
+                shell.SendKeys('%')  # Sblocca il focus di Windows
                 win32gui.SetForegroundWindow(hwnd)
                 time.sleep(0.5)
             except Exception as e:
@@ -190,6 +202,7 @@ class ImpaginazioneProADialog(QDialog):
                 self.show()
                 return
 
+            # Generazione del blocco comandi
             cmd_script = "FILEDIA 0\n_TILEMODE 0\n"
 
             for img_path in img_paths:
@@ -208,8 +221,11 @@ class ImpaginazioneProADialog(QDialog):
 
             cmd_script += "FILEDIA 1\n"
 
+            # Copia negli appunti e simulazione tastiera
             QApplication.clipboard().setText(cmd_script)
             print("Comandi copiati negli appunti, invio a ProA...")
+            
+            time.sleep(0.3)
             shell.SendKeys('{ESC}{ESC}')
             time.sleep(0.3)
             shell.SendKeys('^v')
@@ -217,14 +233,14 @@ class ImpaginazioneProADialog(QDialog):
             shell.SendKeys('{ENTER}')
             print("Comandi inviati con successo!")
 
-            QMessageBox.information(None, "Successo", f"Rinominate {len(img_paths)} immagini e inviate a ProA!")
+            QMessageBox.information(None, "Successo", f"Rinominate {len(img_paths)} immagini e inviate a ProA in automatico!")
             self.close()
         else:
             print("ERRORE: Nessuna finestra CAD trovata con i filtri attuali!")
-            QMessageBox.warning(self, "Errore", "Nessuna finestra ProA/CAD aperta sul desktop o titolo non riconosciuto!")
+            QMessageBox.warning(self, "Errore", "Nessuna finestra ProA/CAD aperta trovata sul desktop!")
             self.show()
 
 def run():
-    """Punto di ingresso principale per QGIS / Script Runner"""
+    """Punto di avvio principale per QGIS"""
     dlg = ImpaginazioneProADialog()
     dlg.exec_()

@@ -22,7 +22,13 @@
     }
   },
   "Ambiente": {},
-  "Architettura": {},
+  "Architettura": {
+    "Impaginazione su ProA": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Architettura/Impaginazione%20su%20ProA.py",
+      "descrizione": "Rinomina e numera in serie le immagini e le invia automaticamente a ProA per l'impaginazione rapida in ambiente CAD.",
+      "guida": "1. Seleziona la cartella di origine con le immagini.<br>2. Seleziona la cartella di destinazione per le immagini pulite.<br>3. Apri il file in ProA e avvia lo script per generare i layout."
+    }
+  },
   "Civile": {},
   "Droni": {
     "Gestione Foto e Layout": {

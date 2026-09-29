@@ -6,10 +6,9 @@ from qgis.utils import iface
 from qgis.PyQt.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, 
     QGroupBox, QMessageBox, QTableWidget, QTableWidgetItem, 
-    QHeaderView, QAbstractItemView, QWidget, QTextEdit, QLabel, QApplication, QFileDialog
+    QHeaderView, QAbstractItemView, QFrame, QTextEdit, QLabel, QApplication, QFileDialog
 )
 from qgis.PyQt.QtCore import Qt
-from qgis.core import QgsProject
 
 # Importazione dei moduli per comunicare con ProA
 try:
@@ -23,13 +22,14 @@ except ImportError:
 class ImpaginazioneProADialog(QDialog):
     def __init__(self, guida_testo="", parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Impaginazione Automatica su ProA")
-        self.resize(1150, 600)
-
-        self.init_ui(guida_testo)
+        try:
+            self.setWindowTitle("Impaginazione Automatica su ProA")
+            self.resize(1150, 600)
+            self.init_ui(guida_testo)
+        except Exception as e:
+            QMessageBox.critical(None, "Errore di Inizializzazione", f"Errore durante la creazione della finestra:\n{str(e)}")
 
     def init_ui(self, guida_testo):
-        # Layout principale orizzontale a tre sezioni
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(12, 12, 12, 12)
         main_layout.setSpacing(12)
@@ -101,9 +101,9 @@ class ImpaginazioneProADialog(QDialog):
         # =====================================================
         # 3. PANNELLO GUIDA PASSO-PASSO (A DESTRA)
         # =====================================================
-        widget_guida = QWidget()
-        widget_guida.setStyleSheet("background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px;")
-        layout_dx = QVBoxLayout(widget_guida)
+        frame_guida = QFrame()
+        frame_guida.setStyleSheet("background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px;")
+        layout_dx = QVBoxLayout(frame_guida)
         layout_dx.setContentsMargins(10, 10, 10, 10)
 
         lbl_titolo_guida = QLabel("📖 Guida Passo-Passo")
@@ -116,7 +116,7 @@ class ImpaginazioneProADialog(QDialog):
         txt_guida.setStyleSheet("border: none; background: transparent;")
         layout_dx.addWidget(txt_guida)
 
-        main_layout.addWidget(widget_guida, stretch=1)
+        main_layout.addWidget(frame_guida, stretch=1)
 
     # ----------------------------------------------------
     # UTILITIES PER LA SELEZIONE E L'ANTEPRIMA
@@ -131,6 +131,11 @@ class ImpaginazioneProADialog(QDialog):
         dir_path = QFileDialog.getExistingDirectory(iface.mainWindow(), "Seleziona la cartella di DESTINAZIONE")
         if dir_path:
             self.txt_destinazione.setText(dir_path)
+
+    def pulisci_e_rinomina_nome(self, stem):
+        # Rimuove prefissi brevi iniziali (es. "A0_", "B2.", "1-", max 3 caratteri) lasciando intatte parole lunghe
+        nuovo_nome_base = re.sub(r'^[a-zA-Z0-9]{1,3}[_\\.\-\s]+\s*', '', stem)
+        return nuovo_nome_base.strip().capitalize()
 
     def aggiorna_anteprima(self):
         origine = self.txt_origine.text()
@@ -147,8 +152,7 @@ class ImpaginazioneProADialog(QDialog):
         contatore = 1
         for idx, filename in enumerate(files):
             stem, ext = os.path.splitext(filename)
-            nuovo_nome_base = re.sub(r'^[a-zA-Z0-9]{1,3}[_\\.]\s*', '', stem)
-            nuovo_nome_base = nuovo_nome_base.strip().capitalize()
+            nuovo_nome_base = self.pulisci_e_rinomina_nome(stem)
             nuovo_nome = f"{contatore}. {nuovo_nome_base}{ext}"
 
             self.tabella_file.setItem(idx, 0, QTableWidgetItem(filename))
@@ -156,7 +160,7 @@ class ImpaginazioneProADialog(QDialog):
             contatore += 1
 
     # ----------------------------------------------------
-    # ESECUZIONE DEL PROCESSO (CON LA TUA LOGICA ORIGINALE)
+    # ESECUZIONE DEL PROCESSO
     # ----------------------------------------------------
     def esegui_processo(self):
         origine = self.txt_origine.text()
@@ -174,7 +178,12 @@ class ImpaginazioneProADialog(QDialog):
         os.makedirs(destinazione, exist_ok=True)
         estensioni_valide = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.tiff')
 
-        files = sorted(os.listdir(origine))
+        try:
+            files = sorted(os.listdir(origine))
+        except Exception as e:
+            QMessageBox.warning(self, "Errore", f"Impossibile leggere la cartella di origine:\n{e}")
+            return
+
         contatore = 1
         img_paths = []
 
@@ -184,9 +193,7 @@ class ImpaginazioneProADialog(QDialog):
                 percorso_origine = os.path.join(origine, filename)
                 stem, ext = os.path.splitext(filename)
                 
-                nuovo_nome_base = re.sub(r'^[a-zA-Z0-9]{1,3}[_\\.]\s*', '', stem)
-                nuovo_nome_base = nuovo_nome_base.strip().capitalize()
-                
+                nuovo_nome_base = self.pulisci_e_rinomina_nome(stem)
                 nuovo_nome = f"{contatore}. {nuovo_nome_base}{ext}"
                 percorso_destinazione = os.path.join(destinazione, nuovo_nome)
                 
@@ -203,30 +210,38 @@ class ImpaginazioneProADialog(QDialog):
             self.accept()
             return
 
-        # FASE 2: Automazione ProA (con la tua logica originale esatta)
+        # FASE 2: Automazione ProA con ricerca flessibile
         def enum_windows_callback(hwnd, extra):
             title = win32gui.GetWindowText(hwnd)
-            if "ProA" in title or "progeCAD" in title or "icad" in title.lower():
-                extra.append(hwnd)
+            if title and win32gui.IsWindowVisible(hwnd):
+                title_lower = title.lower()
+                if any(k in title_lower for k in ["proa", "progecad", "icad", "autocad", "oem", "dwg"]):
+                    extra.append((hwnd, title))
 
         top_windows = []
         win32gui.EnumWindows(enum_windows_callback, top_windows)
 
         if top_windows:
-            # Nasconde subito la finestra di QGIS per non rubare il focus a ProA
+            hwnd, titolo_rilevato = top_windows[0]
+            
+            # Nasconde QGIS per rilasciare il focus
             self.hide()
-            time.sleep(0.3)
+            QApplication.processEvents()
+            time.sleep(1.0)
 
-            hwnd = top_windows[0]
-            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-            shell.SendKeys('%')
-            win32gui.SetForegroundWindow(hwnd)
-            time.sleep(0.4)
+            try:
+                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                shell.SendKeys('%')
+                win32gui.SetForegroundWindow(hwnd)
+                time.sleep(0.5)
+            except Exception as e:
+                QMessageBox.warning(None, "Errore di focus", f"Impossibile attivare la finestra CAD ({titolo_rilevato}):\n{e}")
+                self.show()
+                return
 
-            # Il tuo script esatto di comandi
+            # Costruzione dello script dei comandi
             cmd_script = "FILEDIA 0\n_TILEMODE 0\n"
 
-            # FASE A: Duplica il layout iniziale pulito per ogni immagine
             for img_path in img_paths:
                 layout_name = os.path.splitext(os.path.basename(img_path))[0]
                 cmd_script += (
@@ -236,7 +251,6 @@ class ImpaginazioneProADialog(QDialog):
                     f"{layout_name}\n"
                 )
 
-            # FASE B: Entra nei singoli layout creati, inserisce la foto e la porta dietro
             for img_path in img_paths:
                 img_path_clean = img_path.replace("\\", "/")
                 layout_name = os.path.splitext(os.path.basename(img_path))[0]
@@ -261,15 +275,16 @@ class ImpaginazioneProADialog(QDialog):
             # Incolla ed esegue l'intera sequenza di comandi in ProA
             QApplication.clipboard().setText(cmd_script)
             shell.SendKeys('{ESC}{ESC}')
-            time.sleep(0.2)
-            shell.SendKeys('^v')
             time.sleep(0.3)
+            shell.SendKeys('^v')
+            time.sleep(0.4)
             shell.SendKeys('{ENTER}')
             
-            QMessageBox.information(None, "Successo", f"Rinominate {len(img_paths)} immagini e inviate a ProA con successo!")
+            QMessageBox.information(None, "Successo", f"Rinominate {len(img_paths)} immagini e inviate a ProA con successo!\n(Finestra rilevata: {titolo_rilevato})")
             self.close()
         else:
-            QMessageBox.warning(self, "Errore", "Non trovo ProA aperto sul desktop! Apri prima il file CAD in ProA.")
+            QMessageBox.warning(None, "Errore", "Nessuna finestra CAD compatibile trovata aperta sul desktop!")
+            self.show()
 
 def run():
     guida_testo = """

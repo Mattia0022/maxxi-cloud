@@ -171,16 +171,16 @@ class DialogoErroreSorgente(QDialog):
             if typenames:
                 self.nuovo_url = url
                 self.crea_messaggio_outlook(url)
-                QMessageBox.information(self, "Successo", "Il nuovo link funziona correttamente! Outlook è stato aperto con la bozza pronta per m.zuddas@maxxiengineering.it (controlla e clicca su Invia).")
+                QMessageBox.information(self, "Successo", "Il nuovo link funziona correttamente! Outlook è stato aperto con la bozza pronta per i collaboratori (controlla e clicca su Invia).")
                 self.accept()
         except Exception as e:
             QApplication.restoreOverrideCursor()
             QMessageBox.critical(self, "Errore", f"Anche il nuovo link ha fallito dopo i tentativi:\n{e}")
 
     def crea_messaggio_outlook(self, url):
-        email_destinatario = "m.zuddas@maxxiengineering.it"
+        email_destinatario = "m.zuddas@maxxiengineering.it; n.melis@maxxiengineering.it; a.cau@maxxiengineering.it"
         oggetto = "[Maxxi Cloud] Segnalazione link WFS non funzionante"
-        corpo = f"Ciao Mattia,\n\nIl seguente link WFS non risultava funzionante ed è stato sostituito.\n\nNuovo URL verificato e funzionante:\n{url}"
+        corpo = f"Ciao a tutti,\n\nIl seguente link WFS non risultava funzionante ed è stato sostituito.\n\nNuovo URL verificato e funzionante:\n{url}"
 
         creato = False
         # Tentativo diretto tramite automazione COM di Outlook (ottimale per Windows)
@@ -191,7 +191,7 @@ class DialogoErroreSorgente(QDialog):
             mail.To = email_destinatario
             mail.Subject = oggetto
             mail.Body = corpo
-            mail.Display(True) # Apre la finestra di Outlook in primo piano consentendo all'utente di cliccare invio
+            mail.Display(True) # Apre la finestra di Outlook in primo piano
             creato = True
             QgsMessageLog.logMessage("Finestra di Outlook aperta con successo tramite win32com.", "WFS Script", Qgis.Info)
         except Exception as ex:
@@ -229,7 +229,7 @@ class FinestraSceltaSorgenti(QDialog):
         self.sorgenti_fisse = [
             {
                 "nome": "Bacini Idrografici (PCN MinAmbiente)",
-                "url": "http://wms.pcn.minambiente.itiali/Bacini_idrografici.map"
+                "url": "http://wms.pcn.minambiente.it/ogc?map=/ms_ogc/WMS_v1.3/Vettoriali/Bacini_idrografici.map"
             },
             {
                 "nome": "CTR Regione Toscana",

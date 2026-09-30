@@ -493,7 +493,6 @@ def avvia_plugin():
         dlg_layer = FinestraSelezioneLayer(url_scelto, nome_scelto, iface.mainWindow() if iface else None)
         dlg_layer.exec_()
 
-# Funzione standard richiesta dai launcher di QGIS
 def run():
     avvia_plugin()
 

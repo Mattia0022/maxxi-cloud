@@ -151,7 +151,7 @@ class DialogoErroreSorgente(QDialog):
         self.campo_nuovo_url.setText(url_fallito)
         layout.addWidget(self.campo_nuovo_url)
         
-        btn_prova = QPushButton("Verifica e Invia Notifica a xxx")
+        btn_prova = QPushButton("Verifica e Invia Notifica a m.zuddas@maxxiengineering.it")
         btn_prova.setStyleSheet("background-color: #2d89ef; color: white; font-weight: bold; padding: 8px;")
         btn_prova.clicked.connect(self.verifica_nuovo_link)
         layout.addWidget(btn_prova)
@@ -171,14 +171,14 @@ class DialogoErroreSorgente(QDialog):
             if typenames:
                 self.nuovo_url = url
                 self.invia_email_notifica(url)
-                QMessageBox.information(self, "Successo", "Il nuovo link funziona correttamente! È stata inviata una mail all'indirizzo xxx.")
+                QMessageBox.information(self, "Successo", "Il nuovo link funziona correttamente! È stata inviata una mail all'indirizzo m.zuddas@maxxiengineering.it.")
                 self.accept()
         except Exception as e:
             QApplication.restoreOverrideCursor()
             QMessageBox.critical(self, "Errore", f"Anche il nuovo link ha fallito dopo i tentativi:\n{e}")
 
     def invia_email_notifica(self, url):
-        msg_log = f"SIMULAZIONE INVIO EMAIL A xxx: Il link precedente non funzionava. È stato registrato e sostituito con il nuovo URL: {url}"
+        msg_log = f"SIMULAZIONE INVIO EMAIL A m.zuddas@maxxiengineering.it: Il link precedente non funzionava. È stato registrato e sostituito con il nuovo URL: {url}"
         QgsMessageLog.logMessage(msg_log, "WFS Script", Qgis.Info)
 
 

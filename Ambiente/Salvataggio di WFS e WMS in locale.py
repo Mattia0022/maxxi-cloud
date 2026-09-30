@@ -238,6 +238,10 @@ class FinestraSceltaSorgenti(QDialog):
             {
                 "nome": "EUAP - Aree Protette (PCN MinAmbiente)",
                 "url": "http://wms.pcn.minambiente.it/ogc?map=/ms_ogc/WMS_v1.3/Vettoriali/EUAP.map&version=1.3.0"
+            },
+            {
+                "nome": "ReNDiS - ISPRA (Aree a rischio idrogeologico)",
+                "url": "http://www.rendis.isprambiente.it/geoserver/open_rendis/ows?version=1.1.0"
             }
         ]
         

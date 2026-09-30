@@ -246,6 +246,18 @@ class FinestraSceltaSorgenti(QDialog):
             {
                 "nome": "ReNDiS - ISPRA (Aree a rischio idrogeologico)",
                 "url": "http://www.rendis.isprambiente.it/geoserver/open_rendis/ows"
+            },
+            {
+                "nome": "SIC, ZSC, ZPS - Aree Natura 2000 (PCN MinAmbiente)",
+                "url": "http://wms.pcn.minambiente.it/ogc?map=/ms_ogc/WMS_v1.3/Vettoriali/SIC_ZSC_ZPS.map&version=1.3.0"
+            },
+            {
+                "nome": "WebGIS Regione Sardegna (GeoServer)",
+                "url": "https://webgis.regione.sardegna.it/geoserver/ows"
+            },
+            {
+                "nome": "RAMSAR - Zone Umide (PCN MinAmbiente)",
+                "url": "http://wms.pcn.minambiente.it/ogc?map=/ms_ogc/WMS_v1.3/Vettoriali/RAMSAR.map"
             }
         ]
         

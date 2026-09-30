@@ -229,7 +229,7 @@ class FinestraSceltaSorgenti(QDialog):
         self.sorgenti_fisse = [
             {
                 "nome": "Bacini Idrografici (PCN MinAmbiente)",
-                "url": "http://wms.pcn.minambiente.it/ogc?map=/ms_ogc/WMS_v1.3/Vettoriali/Bacini_idrografici.map"
+                "url": "http://wms.pcn.minambiente.it/ogc?map=/ms_ogc/WMS_v1./Vettoriali/Bacini_idrografici.map"
             },
             {
                 "nome": "CTR Regione Toscana",

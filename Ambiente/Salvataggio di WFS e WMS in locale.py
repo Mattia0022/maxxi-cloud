@@ -40,7 +40,7 @@ except ImportError:
     iface = None
 
 
-# Funzione di supporto per leggere le Capabilities WFS
+# Funzione di supporto per leggere le Capabilities WFS con controllo risposte HTML
 def leggi_capabilities_wfs(url_base, max_tentativi=3):
     url_base = url_base.strip()
     if not url_base.startswith("http://") and not url_base.startswith("https://"):
@@ -62,21 +62,27 @@ def leggi_capabilities_wfs(url_base, max_tentativi=3):
         if not reply.error():
             dati = bytes(reply.readAll())
             reply.deleteLater()
-            try:
-                root = ET.fromstring(dati)
-                typenames = []
-                for elem in root.iter():
-                    tag = elem.tag.split("}")[-1]
-                    if tag == "FeatureType":
-                        for child in elem:
-                            if child.tag.split("}")[-1] == "Name":
-                                if child.text:
-                                    typenames.append(child.text.strip())
-                                break
-                if typenames:
-                    return typenames
-            except Exception as e:
-                err_str = f"Errore parsing XML: {e}"
+            
+            # Controllo se il server ha restituito una pagina HTML di errore anziché XML
+            testo_risposta = dati.decode('utf-8', errors='ignore').strip()
+            if testo_risposta.lower().startswith("<html") or "<body" in testo_risposta.lower():
+                err_str = "Il server ha restituito una pagina HTML di errore o non valida anziché XML WFS."
+            else:
+                try:
+                    root = ET.fromstring(dati)
+                    typenames = []
+                    for elem in root.iter():
+                        tag = elem.tag.split("}")[-1]
+                        if tag == "FeatureType":
+                            for child in elem:
+                                if child.tag.split("}")[-1] == "Name":
+                                    if child.text:
+                                        typenames.append(child.text.strip())
+                                    break
+                    if typenames:
+                        return typenames
+                except Exception as e:
+                    err_str = f"Errore parsing XML: {e}"
         else:
             err_str = reply.errorString()
             
@@ -88,7 +94,7 @@ def leggi_capabilities_wfs(url_base, max_tentativi=3):
                 QThread.msleep(1000)
                 QApplication.processEvents()
             
-    raise RuntimeError(f"Server non raggiungibile dopo {max_tentativi} tentativi. Ultimo errore: {err_str}")
+    raise RuntimeError(f"Server non raggiungibile o risposta non valida dopo {max_tentativi} tentativi. Ultimo errore: {err_str}")
 
 
 # ==========================================
@@ -183,21 +189,19 @@ class DialogoErroreSorgente(QDialog):
         corpo = f"Ciao a tutti,\n\nIl seguente link WFS non risultava funzionante ed è stato sostituito.\n\nNuovo URL verificato e funzionante:\n{url}"
 
         creato = False
-        # Tentativo diretto tramite automazione COM di Outlook (ottimale per Windows)
         try:
             import win32com.client as win32
             outlook = win32.Dispatch('outlook.application')
-            mail = outlook.CreateItem(0) # 0 corrisponde a olMailItem
+            mail = outlook.CreateItem(0)
             mail.To = email_destinatario
             mail.Subject = oggetto
             mail.Body = corpo
-            mail.Display(True) # Apre la finestra di Outlook in primo piano
+            mail.Display(True)
             creato = True
             QgsMessageLog.logMessage("Finestra di Outlook aperta con successo tramite win32com.", "WFS Script", Qgis.Info)
         except Exception as ex:
             QgsMessageLog.logMessage(f"Impossibile aprire Outlook via win32com ({ex}), provo con il protocollo di sistema...", "WFS Script", Qgis.Warning)
 
-        # Fallback nel caso in cui win32com non sia disponibile
         if not creato:
             try:
                 import urllib.parse
@@ -241,7 +245,7 @@ class FinestraSceltaSorgenti(QDialog):
             },
             {
                 "nome": "ReNDiS - ISPRA (Aree a rischio idrogeologico)",
-                "url": "http://www.rendis.isprambiente.it/geoserver/open_rendis/ows?version=1.1.0"
+                "url": "http://www.rendis.isprambiente.it/geoserver/open_rendis/ows"
             }
         ]
         
@@ -252,7 +256,6 @@ class FinestraSceltaSorgenti(QDialog):
         self.aggiorna_pulsanti_sorgenti()
         layout.addLayout(self.layout_bottoni_sorgenti)
         
-        # Pulsante Health Check
         btn_health_check = QPushButton("🔍 Verifica stato di tutti i link (Health Check)")
         btn_health_check.setStyleSheet("background-color: #f39c12; color: white; font-weight: bold; padding: 8px; margin-top: 10px;")
         btn_health_check.clicked.connect(self.esegui_health_check)

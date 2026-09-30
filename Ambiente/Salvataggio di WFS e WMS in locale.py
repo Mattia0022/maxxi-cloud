@@ -2,6 +2,8 @@ import os
 import json
 import time
 import xml.etree.ElementTree as ET
+import urllib.parse
+import webbrowser
 
 from qgis.core import (
     QgsVectorLayer,
@@ -132,7 +134,7 @@ class RectangleMapTool(QgsMapTool):
 
 
 # ==========================================
-# 0. FINESTRA DI ERRORE CON NUOVO LINK E EMAIL
+# 0. FINESTRA DI ERRORE CON APERTURA OUTLOOK
 # ==========================================
 class DialogoErroreSorgente(QDialog):
     def __init__(self, errore_msg, url_fallito, parent=None):
@@ -151,7 +153,7 @@ class DialogoErroreSorgente(QDialog):
         self.campo_nuovo_url.setText(url_fallito)
         layout.addWidget(self.campo_nuovo_url)
         
-        btn_prova = QPushButton("Verifica e Invia Notifica a m.zuddas@maxxiengineering.it")
+        btn_prova = QPushButton("Verifica e Prepara Email in Outlook")
         btn_prova.setStyleSheet("background-color: #2d89ef; color: white; font-weight: bold; padding: 8px;")
         btn_prova.clicked.connect(self.verifica_nuovo_link)
         layout.addWidget(btn_prova)
@@ -170,16 +172,30 @@ class DialogoErroreSorgente(QDialog):
             QApplication.restoreOverrideCursor()
             if typenames:
                 self.nuovo_url = url
-                self.invia_email_notifica(url)
-                QMessageBox.information(self, "Successo", "Il nuovo link funziona correttamente! È stata inviata una mail all'indirizzo m.zuddas@maxxiengineering.it.")
+                self.apri_outlook_notifica(url)
+                QMessageBox.information(self, "Successo", "Il nuovo link funziona correttamente! Outlook è stato aperto con la bozza pronta per m.zuddas@maxxiengineering.it.")
                 self.accept()
         except Exception as e:
             QApplication.restoreOverrideCursor()
             QMessageBox.critical(self, "Errore", f"Anche il nuovo link ha fallito dopo i tentativi:\n{e}")
 
-    def invia_email_notifica(self, url):
-        msg_log = f"SIMULAZIONE INVIO EMAIL A m.zuddas@maxxiengineering.it: Il link precedente non funzionava. È stato registrato e sostituito con il nuovo URL: {url}"
-        QgsMessageLog.logMessage(msg_log, "WFS Script", Qgis.Info)
+    def apri_outlook_notifica(self, url):
+        email_destinatario = "m.zuddas@maxxiengineering.it"
+        oggetto = "[Maxxi Cloud] Segnalazione link WFS non funzionante"
+        corpo = f"Ciao Mattia,\n\nIl seguente link WFS non risultava funzionante ed è stato sostituito.\n\nNuovo URL verificato e funzionante:\n{url}"
+
+        params = {
+            'subject': oggetto,
+            'body': corpo
+        }
+        url_mailto = f"mailto:{email_destinatario}?" + urllib.parse.urlencode(params, safe='')
+
+        try:
+            webbrowser.open(url_mailto)
+            QgsMessageLog.logMessage("Client di posta (Outlook) aperto con successo.", "WFS Script", Qgis.Info)
+        except Exception as e:
+            QgsMessageLog.logMessage(f"Errore apertura client di posta: {e}", "WFS Script", Qgis.Critical)
+            QMessageBox.warning(self, "Avviso", f"Il link è corretto, ma si è verificato un errore nell'apertura di Outlook:\n{e}")
 
 
 # ==========================================
@@ -197,7 +213,7 @@ class FinestraSceltaSorgenti(QDialog):
         self.sorgenti_fisse = [
             {
                 "nome": "Bacini Idrografici (PCN MinAmbiente)",
-                "url": "http://wms.pcn.minambiente.it/ogc?map=/ms_ogc/WMS_v1./Vettoriali/Bacini_idrografici.map"
+                "url": "http://wms.pcn.minambiente.it/ogc?map=/ms_ogc/WMS_v1.3/Vettoriali/Bacini_idrografici.map"
             },
             {
                 "nome": "CTR Regione Toscana",

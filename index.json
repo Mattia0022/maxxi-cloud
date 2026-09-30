@@ -21,7 +21,13 @@
       "guida": "1. Seleziona il gruppo di layer nel pannello laterale.<br>2. Spunta i layer desiderati dalla finestra di dialogo.<br>3. Scegli il formato e la cartella di destinazione per completare l'esportazione."
     }
   },
-  "Ambiente": {},
+  "Ambiente": {
+    "Salvataggio di WFS e WMS in locale": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Ambiente/Salvataggio%20di%20WFS%20e%20WMS%20in%20locale.py",
+      "descrizione": "Permette di scegliere sorgenti WFS, verificarne lo stato con un health check, selezionare un'area personalizzata disegnandola a mano sulla mappa e scaricare i layer in GeoPackage individuali.",
+      "guida": "1. Seleziona una sorgente dalla lista o esegui il controllo dello stato dei link.<br>2. Scegli i layer da scaricare e disegna l'area personalizzata sulla mappa.<br>3. Seleziona la cartella di output per salvare i GeoPackage."
+    }
+  },
   "Architettura": {
     "Impaginazione su ProA": {
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Architettura/Impaginazione%20su%20ProA.py",

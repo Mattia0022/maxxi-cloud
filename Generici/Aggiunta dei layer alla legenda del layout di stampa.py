@@ -23,8 +23,8 @@ class DialogoSelezioneLayout(QDialog):
     layout = QVBoxLayout(self)
     layout.addWidget(
         QLabel(
-            "Seleziona i layout da aggiornare:\n(Tieni premuto CTRL o MAIUSC per"
-            " sceglierne più di uno)"
+            "Seleziona i layout da aggiornare:\n(Tieni premuto CTRL o MAIUSC"
+            " per sceglierne più di uno)"
         )
     )
 
@@ -43,7 +43,7 @@ class DialogoSelezioneLayout(QDialog):
     return [item.text() for item in self.list_widget.selectedItems()]
 
 
-def aggiungi_layer_a_legende_manuali():
+def run():
   project = QgsProject.instance()
   manager = project.layoutManager()
 
@@ -123,6 +123,3 @@ def aggiungi_layer_a_legende_manuali():
   messaggio = f"Operazione completata!\nLayer '{target_layer_name}' aggiunto e visualizzato correttamente in {layouts_modificati} layout."
   print(f"\n{messaggio}")
   QMessageBox.information(None, "Completato", messaggio)
-
-
-aggiungi_layer_a_legende_manuali()

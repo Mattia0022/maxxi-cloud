@@ -1,5 +1,10 @@
 {
   "Generici": {
+    "Aggiunta Layer a Legenda": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Aggiunta%20dei%20layer%20alla%20legenda%20del%20layout%20di%20stampa.py",
+      "descrizione": "Aggiunge automaticamente un layer selezionato alle legende di uno o più layout di stampa prescelti, aggiornando istantaneamente la visualizzazione.",
+      "guida": "1. Avvia lo script e seleziona il layer di interesse.<br>2. Scegli i layout di stampa da aggiornare tramite la finestra di dialogo.<br>3. Conferma per applicare le modifiche e aggiornare le legende."
+    },
     "Gestore Temi Mappa": {
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/gestore_temi_mappa.py",
       "descrizione": "Automatizza la gestione dei temi di mappa e controlla istantaneamente la visibilità dei layer tematici nel progetto QGIS attivo.",

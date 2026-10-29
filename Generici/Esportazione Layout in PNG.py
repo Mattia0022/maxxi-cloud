@@ -3,7 +3,7 @@ from qgis.core import QgsProject, QgsLayoutExporter
 from qgis.utils import iface
 from qgis.PyQt.QtWidgets import (
     QFileDialog, QMessageBox, QListWidget, QDialog, QVBoxLayout, 
-    QHBoxLayout, QPushButton, QAbstractItemView, QGroupBox, QLabel, QLineEdit, QWidget, QTextEdit, QSpinBox
+    QHBoxLayout, QPushButton, QAbstractItemView, QGroupBox, QLabel, QLineEdit, QWidget, QTextEdit, QSpinBox, QProgressBar
 )
 from qgis.PyQt.QtCore import Qt
 
@@ -11,7 +11,7 @@ class EsportazioneLayoutDialog(QDialog):
     def __init__(self, guida_testo="", parent=None):
         super().__init__(parent)
         self.setWindowTitle("Esportazione Avanzata Layout / Atlanti (PNG / PDF)")
-        self.resize(1100, 500)
+        self.resize(1250, 680)  # Schermata iniziale ingrandita
         
         self.setStyleSheet("""
             QDialog {
@@ -50,7 +50,7 @@ class EsportazioneLayoutDialog(QDialog):
                 color: #222222;
                 border: 1px solid #adadad;
                 border-radius: 4px;
-                padding: 6px 12px;
+                padding: 8px 12px;
                 font-weight: bold;
             }
             QPushButton:hover {
@@ -60,14 +60,27 @@ class EsportazioneLayoutDialog(QDialog):
             QPushButton:pressed {
                 background-color: #cce4f7;
             }
+            QProgressBar {
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                text-align: center;
+                background-color: #ffffff;
+                color: #222222;
+                font-weight: bold;
+                height: 18px;
+            }
+            QProgressBar::chunk {
+                background-color: #0078d7;
+                border-radius: 3px;
+            }
         """)
 
         self.init_ui(guida_testo)
 
     def init_ui(self, guida_testo):
         main_layout = QHBoxLayout(self)
-        main_layout.setContentsMargins(12, 12, 12, 12)
-        main_layout.setSpacing(12)
+        main_layout.setContentsMargins(15, 15, 15, 15)
+        main_layout.setSpacing(15)
 
         # --- 1. INTERFACCIA DEL TOOL (A SINISTRA) ---
         widget_interfaccia = QWidget()
@@ -75,9 +88,15 @@ class EsportazioneLayoutDialog(QDialog):
         layout_tool = QHBoxLayout(widget_interfaccia)
         layout_tool.setContentsMargins(0, 0, 0, 0)
 
-        # Box 1: Layout di Stampa
+        # Box 1: Layout di Stampa con barra di ricerca
         box_layout = QGroupBox("1. Layout di Stampa (CTRL o SHIFT per multipli)")
         lay_box = QVBoxLayout(box_layout)
+
+        # Barra di ricerca interattiva
+        self.txt_cerca = QLineEdit()
+        self.txt_cerca.setPlaceholderText("🔍 Cerca layout...")
+        self.txt_cerca.textChanged.connect(self.filtra_layout)
+        lay_box.addWidget(self.txt_cerca)
 
         self.progetto = QgsProject.instance()
         self.layout_manager = self.progetto.layoutManager()
@@ -90,18 +109,18 @@ class EsportazioneLayoutDialog(QDialog):
 
         layout_tool.addWidget(box_layout, 1)
 
-        # Box 2: Configurazione e Destinazione
-        box_opzioni = QGroupBox("2. Configurazione e Destinazione")
+        # Box 2: Configurazione, Destinazione e Barra di Avanzamento
+        box_opzioni = QGroupBox("2. Configurazione, Avanzamento e Destinazione")
         lay_opzioni = QVBoxLayout(box_opzioni)
 
         crs_progetto = self.progetto.crs().authid()
         crs_desc = self.progetto.crs().description()
         
         lbl_info = QLabel(f"• Sistema di Riferimento: {crs_progetto} ({crs_desc})")
-        lbl_info.setStyleSheet("color: #555555; margin-bottom: 5px;")
+        lbl_info.setStyleSheet("color: #555555; margin-bottom: 2px;")
         lay_opzioni.addWidget(lbl_info)
 
-        # Campo DPI personalizzabile integrato direttamente
+        # Campo DPI personalizzabile
         lay_dpi = QHBoxLayout()
         lbl_dpi = QLabel("• Risoluzione (DPI):")
         lbl_dpi.setStyleSheet("color: #555555;")
@@ -124,6 +143,12 @@ class EsportazioneLayoutDialog(QDialog):
         lay_corso.addWidget(btn_browse)
         lay_opzioni.addLayout(lay_corso)
 
+        # Barra di avanzamento (%)
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setValue(0)
+        self.progress_bar.hide()  # Nascosta finché non parte l'esportazione
+        lay_opzioni.addWidget(self.progress_bar)
+
         lay_opzioni.addStretch()
 
         # Pulsanti separati per PNG e PDF
@@ -145,7 +170,7 @@ class EsportazioneLayoutDialog(QDialog):
         widget_guida = QWidget()
         widget_guida.setStyleSheet("background-color: #ffffff; border: 1px solid #dcdcdc; border-radius: 8px;")
         layout_dx = QVBoxLayout(widget_guida)
-        layout_dx.setContentsMargins(8, 8, 8, 8)
+        layout_dx.setContentsMargins(10, 10, 10, 10)
 
         lbl_titolo_guida = QLabel("📖 Guida Passo-Passo")
         lbl_titolo_guida.setStyleSheet("color: #0078d7; font-weight: bold; font-size: 13px; border: none; background: transparent; margin-bottom: 4px;")
@@ -158,6 +183,13 @@ class EsportazioneLayoutDialog(QDialog):
         layout_dx.addWidget(txt_guida)
 
         main_layout.addWidget(widget_guida, stretch=1)
+
+    def filtra_layout(self, testo):
+        """Filtra la lista dei layout in base al testo digitato nella barra di ricerca."""
+        for index in range(self.lista_widget.count()):
+            item = self.lista_widget.item(index)
+            # Mostra l'elemento solo se il testo di ricerca è contenuto nel nome
+            item.setHidden(testo.lower() not in item.text().lower())
 
     def scegli_cartella(self):
         cartella = QFileDialog.getExistingDirectory(self, "Scegli la cartella di destinazione", "C:\\Users\\userm\\Desktop")
@@ -182,11 +214,17 @@ class EsportazioneLayoutDialog(QDialog):
         percorso_out = Path(cartella_destinazione)
         valore_dpi = float(self.spin_dpi.value())
         
+        # Inizializza e mostra la barra di progresso
+        self.progress_bar.setValue(0)
+        self.progress_bar.setMaximum(len(layout_scelti))
+        self.progress_bar.show()
+        
         print(f"Inizio esportazione di {len(layout_scelti)} elementi in formato {formato.upper()} (DPI: {int(valore_dpi)})...\n" + "-"*50)
         
-        elementi_generati = 0
+        successi = []
+        falliti = []
         
-        # Configurazione delle impostazioni in base al formato scelto
+        # Configurazione impostazioni in base al formato
         if formato == "png":
             impostazioni = QgsLayoutExporter.ImageExportSettings()
             impostazioni.dpi = valore_dpi
@@ -196,7 +234,7 @@ class EsportazioneLayoutDialog(QDialog):
             impostazioni.dpi = valore_dpi
             ext = "pdf"
         
-        for nome_layout in layout_scelti:
+        for index, nome_layout in enumerate(layout_scelti):
             layout = self.layout_manager.layoutByName(nome_layout)
             
             if layout:
@@ -220,13 +258,30 @@ class EsportazioneLayoutDialog(QDialog):
                 
                 if risultato == QgsLayoutExporter.Success:
                     print(f"[OK] Esportato correttamente elemento: {nome_layout}")
-                    elementi_generati += 1
+                    successi.append(nome_layout)
                 else:
                     print(f"[ERRORE] Fallimento su: {nome_layout} (Codice errore: {risultato})")
+                    falliti.append(nome_layout)
+            else:
+                falliti.append(nome_layout)
+            
+            # Aggiorna la barra di progresso in percentuale
+            self.progress_bar.setValue(index + 1)
                 
         print("-"*50)
-        print(f"PROCESSO CONCLUSO! Generati {elementi_generati} elementi grafici in {formato.upper()}.")
-        QMessageBox.information(self, "Fatto!", f"Esportazione in {formato.upper()} completata con successo!")
+        print(f"PROCESSO CONCLUSO! Successi: {len(successi)}, Falliti: {len(falliti)}")
+        
+        # Costruisce il messaggio di riepilogo dettagliato finale
+        report_msg = f"Processo di esportazione in {formato.upper()} completato!\n\n"
+        report_msg += f"• Stampati con successo: {len(successi)}\n"
+        report_msg += f"• Falliti: {len(falliti)}"
+        
+        if falliti:
+            report_msg += "\n\nElementi falliti:\n" + "\n".join([f" - {f}" for f in falliti])
+            QMessageBox.warning(self, "Report Esportazione (con errori)", report_msg)
+        else:
+            QMessageBox.information(self, "Report Esportazione", report_msg)
+            
         self.accept()
 
 def run():

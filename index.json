@@ -36,6 +36,11 @@
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Ambiente/Ritaglio%20in%20serie%20di%20file%20su%20QGIS.py",
       "descrizione": "Ritaglia in serie uno o più layer raster utilizzando un layer poligonale come maschera, con interfaccia di ricerca e salvataggio automatico.",
       "guida": "1. Avvia lo script e seleziona i layer raster da ritagliare usando la ricerca.<br>2. Seleziona il layer poligonale di maschera.<br>3. Scegli la cartella di output e decidi se aggiungere il suffisso per completare il processo."
+    },
+    "Cropt immagine ed inserimento in layout di stampa": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Ambiente/Cropt%20immagine%20ed%20inserimento%20in%20layout%20di%20stampa.py",
+      "descrizione": "Ritaglia in serie le legende da immagini di tavole con interfaccia interattiva e le inserisce automaticamente nei layout di stampa corrispondenti di QGIS.",
+      "guida": "1. Seleziona le immagini delle tavole e la cartella di output.<br>2. Ritaglia la legenda (puoi riutilizzare il ritaglio precedente per i file successivi).<br>3. Scegli se inserire automaticamente le immagini risultanti nei layout di stampa."
     }
   },
   "Architettura": {

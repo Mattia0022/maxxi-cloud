@@ -10,7 +10,7 @@
       "descrizione": "Automatizza la gestione dei temi di mappa e controlla istantaneamente la visibilità dei layer tematici nel progetto QGIS attivo.",
       "guida": "1. Apri lo strumento dal pannello principale.<br>2. Seleziona il tema desiderato dall'elenco a discesa.<br>3. Applica la configurazione per aggiornare la vista mappa."
     },
-    "Esportazione Layout in PNG o PDF": {
+    "Esportazione Layout in PNG": {
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Esportazione%20Layout%20in%20PNG%20o%20PDF.py",
       "descrizione": "Esporta in blocco tutti i layout di stampa configurati in file immagine PNG o in PDF ad altissima risoluzione, ideali per report e presentazioni tecniche.",
       "guida": "1. Seleziona il layout di stampa di interesse.<br>2. Scegli la cartella di destinazione e definisci la risoluzione (DPI).<br>3. Avvia l'esportazione automatica."
@@ -23,7 +23,7 @@
     "Esportazione in serie gruppo kml_kmz": {
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Esportazione%20in%20serie%20gruppo%20kml_kmz.py",
       "descrizione": "Esporta in serie i layer vettoriali di un gruppo selezionato in formato KML o KMZ, riproiettandoli automaticamente in EPSG:32632.",
-      "guida": "1. Seleziona il gruppo di layer nel pannello laterale.<br>3. Scegli il formato e la cartella di destinazione per completare l'esportazione."
+      "guida": "1. Seleziona il gruppo di layer nel pannello laterale.<br>2. Spunta i layer desiderati dalla finestra di dialogo.<br>3. Scegli il formato e la cartella di destinazione per completare l'esportazione."
     }
   },
   "Ambiente": {

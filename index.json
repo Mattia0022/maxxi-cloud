@@ -10,9 +10,9 @@
       "descrizione": "Automatizza la gestione dei temi di mappa e controlla istantaneamente la visibilità dei layer tematici nel progetto QGIS attivo.",
       "guida": "1. Apri lo strumento dal pannello principale.<br>2. Seleziona il tema desiderato dall'elenco a discesa.<br>3. Applica la configurazione per aggiornare la vista mappa."
     },
-    "Esportazione Layout in PNG": {
+    "Esportazione Layout in PNG o PDF": {
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Esportazione%20Layout%20in%20PNG.py",
-      "descrizione": "Esporta in blocco tutti i layout di stampa configurati in file immagine PNG ad altissima risoluzione, ideali per report e presentazioni tecniche.",
+      "descrizione": "Esporta in blocco tutti i layout di stampa configurati in file immagine PNG o in PDF ad altissima risoluzione, ideali per report e presentazioni tecniche.",
       "guida": "1. Seleziona il layout di stampa di interesse.<br>2. Scegli la cartella di destinazione e definisci la risoluzione (DPI).<br>3. Avvia l'esportazione automatica."
     },
     "Modifica Simbologia Layer": {

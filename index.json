@@ -1,289 +1,63 @@
-from pathlib import Path
-from qgis.core import QgsProject, QgsLayoutExporter
-from qgis.utils import iface
-from qgis.PyQt.QtWidgets import (
-    QFileDialog, QMessageBox, QListWidget, QDialog, QVBoxLayout, 
-    QHBoxLayout, QPushButton, QAbstractItemView, QGroupBox, QLabel, QLineEdit, QWidget, QTextEdit, QSpinBox, QProgressBar
-)
-from qgis.PyQt.QtCore import Qt
-
-class EsportazioneLayoutDialog(QDialog):
-    def __init__(self, guida_testo="", parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Esportazione Avanzata Layout / Atlanti (PNG / PDF)")
-        self.resize(1250, 680)
-        
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #f5f5f5;
-                color: #222222;
-                font-family: Arial, sans-serif;
-            }
-            QGroupBox {
-                border: 1px solid #dcdcdc;
-                border-radius: 6px;
-                margin-top: 10px;
-                font-weight: bold;
-                color: #333333;
-                background-color: #ffffff;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-            QListWidget {
-                background-color: #ffffff;
-                color: #222222;
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-            }
-            QLineEdit, QSpinBox {
-                background-color: #ffffff;
-                color: #222222;
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-                padding: 5px;
-            }
-            QPushButton {
-                background-color: #e6e6e6;
-                color: #222222;
-                border: 1px solid #adadad;
-                border-radius: 4px;
-                padding: 6px 12px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #e5f1fb;
-                border: 1px solid #0078d7;
-            }
-            QPushButton:pressed {
-                background-color: #cce4f7;
-            }
-            QProgressBar {
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-                text-align: center;
-                background-color: #ffffff;
-                color: #222222;
-                font-weight: bold;
-                height: 18px;
-            }
-            QProgressBar::chunk {
-                background-color: #0078d7;
-                border-radius: 3px;
-            }
-        """)
-
-        self.init_ui(guida_testo)
-
-    def init_ui(self, guida_testo):
-        main_layout = QHBoxLayout(self)
-        main_layout.setContentsMargins(12, 12, 12, 12)
-        main_layout.setSpacing(12)
-
-        # --- 1. INTERFACCIA DEL TOOL (A SINISTRA) ---
-        widget_interfaccia = QWidget()
-        widget_interfaccia.setStyleSheet("background: transparent;")
-        layout_tool = QHBoxLayout(widget_interfaccia)
-        layout_tool.setContentsMargins(0, 0, 0, 0)
-
-        # Box 1: Layout di Stampa con barra di ricerca
-        box_layout = QGroupBox("1. Layout di Stampa (CTRL o SHIFT per multipli)")
-        lay_box = QVBoxLayout(box_layout)
-
-        # Barra di ricerca inserita sopra la lista
-        self.txt_cerca = QLineEdit()
-        self.txt_cerca.setPlaceholderText("🔍 Cerca layout...")
-        self.txt_cerca.textChanged.connect(self.filtra_layout)
-        lay_box.addWidget(self.txt_cerca)
-
-        self.progetto = QgsProject.instance()
-        self.layout_manager = self.progetto.layoutManager()
-        self.tutti_i_layout = [l.name() for l in self.layout_manager.printLayouts()]
-
-        self.lista_widget = QListWidget()
-        self.lista_widget.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.lista_widget.addItems(self.tutti_i_layout)
-        lay_box.addWidget(self.lista_widget)
-
-        layout_tool.addWidget(box_layout, 1)
-
-        # Box 2: Configurazione e Destinazione
-        box_opzioni = QGroupBox("2. Configurazione e Destinazione")
-        lay_opzioni = QVBoxLayout(box_opzioni)
-
-        crs_progetto = self.progetto.crs().authid()
-        crs_desc = self.progetto.crs().description()
-        
-        lbl_info = QLabel(f"• Sistema di Riferimento: {crs_progetto} ({crs_desc})")
-        lbl_info.setStyleSheet("color: #555555; margin-bottom: 5px;")
-        lay_opzioni.addWidget(lbl_info)
-
-        # Campo DPI personalizzabile
-        lay_dpi = QHBoxLayout()
-        lbl_dpi = QLabel("• Risoluzione (DPI):")
-        lbl_dpi.setStyleSheet("color: #555555;")
-        self.spin_dpi = QSpinBox()
-        self.spin_dpi.setRange(72, 2400)
-        self.spin_dpi.setValue(300)
-        self.spin_dpi.setSingleStep(50)
-        self.spin_dpi.setFixedWidth(100)
-        lay_dpi.addWidget(lbl_dpi)
-        lay_dpi.addWidget(self.spin_dpi)
-        lay_dpi.addStretch()
-        lay_opzioni.addLayout(lay_dpi)
-
-        lay_corso = QHBoxLayout()
-        self.txt_path = QLineEdit()
-        self.txt_path.setPlaceholderText("Seleziona la cartella di destinazione...")
-        btn_browse = QPushButton("Sfoglia...")
-        btn_browse.clicked.connect(self.scegli_cartella)
-        lay_corso.addWidget(self.txt_path)
-        lay_corso.addWidget(btn_browse)
-        lay_opzioni.addLayout(lay_corso)
-
-        # Barra di avanzamento (%)
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setValue(0)
-        self.progress_bar.hide()
-        lay_opzioni.addWidget(self.progress_bar)
-
-        lay_opzioni.addStretch()
-
-        # Due pulsanti separati: Esporta PNG ed Esporta PDF
-        lay_btn = QHBoxLayout()
-        self.btn_png = QPushButton("Esporta PNG")
-        self.btn_png.clicked.connect(lambda: self.avvia_esportazione("png"))
-        
-        self.btn_pdf = QPushButton("Esporta PDF")
-        self.btn_pdf.clicked.connect(lambda: self.avvia_esportazione("pdf"))
-        
-        lay_btn.addWidget(self.btn_png)
-        lay_btn.addWidget(self.btn_pdf)
-        lay_opzioni.addLayout(lay_btn)
-
-        layout_tool.addWidget(box_opzioni, 1)
-        main_layout.addWidget(widget_interfaccia, stretch=3)
-
-        # --- 2. PANNELLO GUIDA (A DESTRA) ---
-        widget_guida = QWidget()
-        widget_guida.setStyleSheet("background-color: #ffffff; border: 1px solid #dcdcdc; border-radius: 8px;")
-        layout_dx = QVBoxLayout(widget_guida)
-        layout_dx.setContentsMargins(8, 8, 8, 8)
-
-        lbl_titolo_guida = QLabel("📖 Guida Passo-Passo")
-        lbl_titolo_guida.setStyleSheet("color: #0078d7; font-weight: bold; font-size: 13px; border: none; background: transparent; margin-bottom: 4px;")
-        layout_dx.addWidget(lbl_titolo_guida)
-
-        txt_guida = QTextEdit()
-        txt_guida.setReadOnly(True)
-        txt_guida.setHtml(f"<div style='color: #333333; font-size: 12px; line-height: 1.5;'>{guida_testo}</div>")
-        txt_guida.setStyleSheet("background-color: #ffffff; color: #222222; border: 1px solid #cccccc; border-radius: 4px; padding: 8px;")
-        layout_dx.addWidget(txt_guida)
-
-        main_layout.addWidget(widget_guida, stretch=1)
-
-    def filtra_layout(self, testo):
-        """Filtra la lista dei layout in base al testo digitato nella barra di ricerca."""
-        for index in range(self.lista_widget.count()):
-            item = self.lista_widget.item(index)
-            item.setHidden(testo.lower() not in item.text().lower())
-
-    def scegli_cartella(self):
-        cartella = QFileDialog.getExistingDirectory(self, "Scegli la cartella di destinazione", "C:\\Users\\userm\\Desktop")
-        if cartella:
-            self.txt_path.setText(cartella)
-
-    def avvia_esportazione(self, formato):
-        if not self.tutti_i_layout:
-            QMessageBox.warning(self, "Attenzione", "Non ci sono layout di stampa creati in questo progetto!")
-            return
-
-        layout_scelti = [item.text() for item in self.lista_widget.selectedItems()]
-        if not layout_scelti:
-            QMessageBox.warning(self, "Attenzione", "Seleziona almeno un layout dalla lista a sinistra.")
-            return
-
-        cartella_destinazione = self.txt_path.text().strip()
-        if not cartella_destinazione:
-            QMessageBox.warning(self, "Attenzione", "Seleziona una cartella di destinazione valida.")
-            return
-
-        percorso_out = Path(cartella_destinazione)
-        valore_dpi = float(self.spin_dpi.value())
-        
-        # Configura e mostra la barra di progresso
-        self.progress_bar.setValue(0)
-        self.progress_bar.setMaximum(len(layout_scelti))
-        self.progress_bar.show()
-        
-        print(f"Inizio esportazione di {len(layout_scelti)} elementi in formato {formato.upper()} (DPI: {int(valore_dpi)})...\n" + "-"*50)
-        
-        successi = []
-        falliti = []
-        
-        if formato == "png":
-            impostazioni = QgsLayoutExporter.ImageExportSettings()
-            impostazioni.dpi = valore_dpi
-            ext = "png"
-        else:
-            impostazioni = QgsLayoutExporter.PdfExportSettings()
-            impostazioni.dpi = valore_dpi
-            ext = "pdf"
-        
-        for index, nome_layout in enumerate(layout_scelti):
-            layout = self.layout_manager.layoutByName(nome_layout)
-            
-            if layout:
-                esportatore = QgsLayoutExporter(layout)
-                atlante = layout.atlas()
-                
-                if atlante.enabled():
-                    print(f"[ATLANTE RILEVATO] Generazione {formato.upper()} per l'atlante: {nome_layout}")
-                    if formato == "png":
-                        prefisso_file = str(percorso_out / f"{nome_layout}_pagina_")
-                        risultato = esportatore.exportToImage(atlante, prefisso_file, "png", impostazioni)
-                    else:
-                        percorso_completo = str(percorso_out / f"{nome_layout}_atlante.pdf")
-                        risultato = esportatore.exportToPdf(atlante, percorso_completo, impostazioni)
-                else:
-                    percorso_completo = str(percorso_out / f"{nome_layout}.{ext}")
-                    if formato == "png":
-                        risultato = esportatore.exportToImage(percorso_completo, impostazioni)
-                    else:
-                        risultato = esportatore.exportToPdf(percorso_completo, impostazioni)
-                
-                if risultato == QgsLayoutExporter.Success:
-                    print(f"[OK] Esportato correttamente elemento: {nome_layout}")
-                    successi.append(nome_layout)
-                else:
-                    print(f"[ERRORE] Fallimento su: {nome_layout} (Codice errore: {risultato})")
-                    falliti.append(nome_layout)
-            else:
-                falliti.append(nome_layout)
-            
-            # Aggiorna la barra di progresso
-            self.progress_bar.setValue(index + 1)
-                
-        print("-"*50)
-        print(f"PROCESSO CONCLUSO! Successi: {len(successi)}, Falliti: {len(falliti)}")
-        
-        # Report finale dettagliato
-        report_msg = f"Processo di esportazione in {formato.upper()} completato!\n\n"
-        report_msg += f"• Stampati con successo: {len(successi)}\n"
-        report_msg += f"• Falliti: {len(falliti)}"
-        
-        if falliti:
-            report_msg += "\n\nElementi falliti:\n" + "\n".join([f" - {f}" for f in falliti])
-            QMessageBox.warning(self, "Report Esportazione (con errori)", report_msg)
-        else:
-            QMessageBox.information(self, "Report Esportazione", report_msg)
-            
-        self.accept()
-
-def run():
-    guida_testo = globals().get("MAXXI_GUIDA", "Nessuna guida disponibile.")
-    dlg = EsportazioneLayoutDialog(guida_testo, iface.mainWindow())
-    dlg.show()
-    iface.maxxi_esportazione_dlg = dlg
+{
+  "Generici": {
+    "Aggiunta Layer a Legenda": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Aggiunta%20dei%20layer%20alla%20legenda%20del%20layout%20di%20stampa.py",
+      "descrizione": "Aggiunge automaticamente un layer selezionato alle legende di uno o più layout di stampa prescelti, aggiornando istantaneamente la visualizzazione.",
+      "guida": "1. Avvia lo script e seleziona il layer di interesse.<br>2. Scegli i layout di stampa da aggiornare tramite la finestra di dialogo.<br>3. Conferma per applicare le modifiche e aggiornare le legende."
+    },
+    "Gestore Temi Mappa": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/gestore_temi_mappa.py",
+      "descrizione": "Automatizza la gestione dei temi di mappa e controlla istantaneamente la visibilità dei layer tematici nel progetto QGIS attivo.",
+      "guida": "1. Apri lo strumento dal pannello principale.<br>2. Seleziona il tema desiderato dall'elenco a discesa.<br>3. Applica la configurazione per aggiornare la vista mappa."
+    },
+    "Esportazione Layout in PNG": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Esportazione%20Layout%20in%20PNG%20o%20PDF.py",
+      "descrizione": "Esporta in blocco tutti i layout di stampa configurati in file immagine PNG o in PDF ad altissima risoluzione, ideali per report e presentazioni tecniche.",
+      "guida": "1. Seleziona il layout di stampa di interesse.<br>2. Scegli la cartella di destinazione e definisci la risoluzione (DPI).<br>3. Avvia l'esportazione automatica."
+    },
+    "Modifica Simbologia Layer": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Modifica%20simbologia%20dei%20layer.py",
+      "descrizione": "Associa automaticamente icone SVG ai layer vettoriali in base ai valori degli attributi, applicando un fallback per i file mancanti.",
+      "guida": "1. Seleziona il layer vettoriale e il campo attributo corrispondente.<br>2. Scegli la cartella contenente le icone SVG.<br>3. Avvia l'associazione per aggiornare la simbologia."
+    },
+    "Esportazione in serie gruppo kml_kmz": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Esportazione%20in%20serie%20gruppo%20kml_kmz.py",
+      "descrizione": "Esporta in serie i layer vettoriali di un gruppo selezionato in formato KML o KMZ, riproiettandoli automaticamente in EPSG:32632.",
+      "guida": "1. Seleziona il gruppo di layer nel pannello laterale.<br>2. Spunta i layer desiderati dalla finestra di dialogo.<br>3. Scegli il formato e la cartella di destinazione per completare l'esportazione."
+    }
+  },
+  "Ambiente": {
+    "Salvataggio di WFS e WMS in locale": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Ambiente/Salvataggio%20di%20WFS%20e%20WMS%20in%20locale.py",
+      "descrizione": "Permette di scegliere sorgenti WFS, verificarne lo stato con un health check, selezionare un'area personalizzata disegnandola a mano sulla mappa e scaricare i layer in GeoPackage individuali.",
+      "guida": "1. Seleziona una sorgente dalla lista o esegui il controllo dello stato dei link.<br>2. Scegli i layer da scaricare e disegna l'area personalizzata sulla mappa.<br>3. Seleziona la cartella di output per salvare i GeoPackage."
+    }
+  },
+  "Architettura": {
+    "Impaginazione su ProA": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Architettura/Impaginazione%20su%20ProA.py",
+      "descrizione": "Rinomina e numera in serie le immagini e le invia automaticamente a ProA per l'impaginazione rapida in ambiente CAD.",
+      "guida": "1. Seleziona la cartella di origine con le immagini.<br>2. Seleziona la cartella di destinazione per le immagini pulite.<br>3. Apri il file in ProA e avvia lo script per generare i layout."
+    }
+  },
+  "Civile": {},
+  "Droni": {
+    "Gestione Foto e Layout": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/gestione_foto_plugin.py",
+      "descrizione": "Ottimizza l'archiviazione, l'associazione e l'impaginazione rapida delle fotografie aeree da drone all'interno dei layout cartografici.",
+      "guida": "1. Specifica la directory di origine contenente le foto georeferenziate.<br>2. Verifica l'associazione degli scatti con i punti o i vettori.<br>3. Genera la struttura grafica o il report di stampa."
+    },
+    "Rinomina File Metashape": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/rinomina_file_metashape.py",
+      "descrizione": "Rinomina automaticamente e in blocco i file di piano o gli elaborati da Agisoft Metashape secondo le convenzioni di nomenclatura standard.",
+      "guida": "1. Seleziona la cartella di lavoro contenente i file da elaborare.<br>2. Controlla l'anteprima delle modifiche nella tabella di riscontro.<br>3. Clicca su 'Applica Rinominazione' per confermare."
+    },
+    "Sezioni trasversali a partire dai punti GNSS": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/Sezioni%20trasversali%20a%20partire%20dai%20punti%20GNSS.py",
+      "descrizione": "Estrae le coordinate e le quote da punti GNSS selezionati per generare script AutoCAD (.scr) di profili e sezioni trasversali proiettate.",
+      "guida": "1. Seleziona il layer di punti e i punti desiderati sulla mappa.<br>2. Scegli la colonna della quota o la geometria 3D.<br>3. Salva e genera lo script AutoCAD."
+    }
+  },
+  "Impianti": {},
+  "Strutture": {}
+}

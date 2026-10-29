@@ -126,7 +126,11 @@ class EsportazioneLayoutDialog(QDialog):
         except Exception as e:
             QMessageBox.critical(self, "Errore Critico", f"Si è verificato un errore inatteso:\n{str(e)}")
 
-# Codice per l'avvio diretto dello script all'interno di QGIS
-if __name__ == '__main__':
+def run():
+    """Funzione d'ingresso standard richiesta per l'esecuzione in QGIS."""
     dialog = EsportazioneLayoutDialog()
     dialog.exec_()
+
+# Per l'avvio diretto o test standalone
+if __name__ == '__main__':
+    run()

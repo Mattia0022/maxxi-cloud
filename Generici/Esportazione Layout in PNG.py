@@ -1,123 +1,236 @@
-# -*- coding: utf-8 -*-
-import os
-from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
-    QComboBox, QSpinBox, QPushButton, QFileDialog, QMessageBox
-)
+from pathlib import Path
 from qgis.core import QgsProject, QgsLayoutExporter
+from qgis.utils import iface
+from qgis.PyQt.QtWidgets import (
+    QFileDialog, QMessageBox, QListWidget, QDialog, QVBoxLayout, 
+    QHBoxLayout, QPushButton, QAbstractItemView, QGroupBox, QLabel, QLineEdit, QWidget, QTextEdit, QSpinBox
+)
+from qgis.PyQt.QtCore import Qt
 
 class EsportazioneLayoutDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, guida_testo="", parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Esportazione Layout di Stampa")
-        self.resize(420, 180)
+        self.setWindowTitle("Esportazione Avanzata Layout / Atlanti (PNG / PDF)")
+        self.resize(1100, 500)
         
-        layout_principale = QVBoxLayout()
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #f5f5f5;
+                color: #222222;
+                font-family: Arial, sans-serif;
+            }
+            QGroupBox {
+                border: 1px solid #dcdcdc;
+                border-radius: 6px;
+                margin-top: 10px;
+                font-weight: bold;
+                color: #333333;
+                background-color: #ffffff;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px;
+            }
+            QListWidget {
+                background-color: #ffffff;
+                color: #222222;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+            }
+            QLineEdit, QSpinBox {
+                background-color: #ffffff;
+                color: #222222;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                padding: 5px;
+            }
+            QPushButton {
+                background-color: #e6e6e6;
+                color: #222222;
+                border: 1px solid #adadad;
+                border-radius: 4px;
+                padding: 6px 12px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #e5f1fb;
+                border: 1px solid #0078d7;
+            }
+            QPushButton:pressed {
+                background-color: #cce4f7;
+            }
+        """)
+
+        self.init_ui(guida_testo)
+
+    def init_ui(self, guida_testo):
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(12, 12, 12, 12)
+        main_layout.setSpacing(12)
+
+        # --- 1. INTERFACCIA DEL TOOL (A SINISTRA) ---
+        widget_interfaccia = QWidget()
+        widget_interfaccia.setStyleSheet("background: transparent;")
+        layout_tool = QHBoxLayout(widget_interfaccia)
+        layout_tool.setContentsMargins(0, 0, 0, 0)
+
+        # Box 1: Layout di Stampa
+        box_layout = QGroupBox("1. Layout di Stampa (CTRL o SHIFT per multipli)")
+        lay_box = QVBoxLayout(box_layout)
+
+        self.progetto = QgsProject.instance()
+        self.layout_manager = self.progetto.layoutManager()
+        self.tutti_i_layout = [l.name() for l in self.layout_manager.printLayouts()]
+
+        self.lista_widget = QListWidget()
+        self.lista_widget.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.lista_widget.addItems(self.tutti_i_layout)
+        lay_box.addWidget(self.lista_widget)
+
+        layout_tool.addWidget(box_layout, 1)
+
+        # Box 2: Configurazione e Destinazione
+        box_opzioni = QGroupBox("2. Configurazione e Destinazione")
+        lay_opzioni = QVBoxLayout(box_opzioni)
+
+        crs_progetto = self.progetto.crs().authid()
+        crs_desc = self.progetto.crs().description()
         
-        # 1. Selezione del Layout di Stampa
-        layout_layout = QHBoxLayout()
-        lbl_layout = QLabel("Layout:")
-        self.cmb_layouts = QComboBox()
-        
-        manager = QgsProject.instance().layoutManager()
-        self.layouts_disponibili = manager.layouts()
-        for lay in self.layouts_disponibili:
-            self.cmb_layouts.addItem(lay.name())
-            
-        layout_layout.addWidget(lbl_layout)
-        layout_layout.addWidget(self.cmb_layouts)
-        layout_principale.addLayout(layout_layout)
-        
-        # 2. Inserimento DPI personalizzati direttamente nella schermata principale
-        dpi_layout = QHBoxLayout()
-        lbl_dpi = QLabel("Risoluzione (DPI):")
+        lbl_info = QLabel(f"• Sistema di Riferimento: {crs_progetto} ({crs_desc})")
+        lbl_info.setStyleSheet("color: #555555; margin-bottom: 5px;")
+        lay_opzioni.addWidget(lbl_info)
+
+        # Campo DPI personalizzabile integrato direttamente
+        lay_dpi = QHBoxLayout()
+        lbl_dpi = QLabel("• Risoluzione (DPI):")
+        lbl_dpi.setStyleSheet("color: #555555;")
         self.spin_dpi = QSpinBox()
         self.spin_dpi.setRange(72, 2400)
-        self.spin_dpi.setValue(300)  # Valore predefinito standard
+        self.spin_dpi.setValue(300)
         self.spin_dpi.setSingleStep(50)
-        
-        dpi_layout.addWidget(lbl_dpi)
-        dpi_layout.addWidget(self.spin_dpi)
-        layout_principale.addLayout(dpi_layout)
-        
-        layout_principale.addSpacing(10)
-        
-        # 3. Pulsanti per l'esportazione in PNG e PDF
-        btn_layout = QHBoxLayout()
-        
+        self.spin_dpi.setFixedWidth(100)
+        lay_dpi.addWidget(lbl_dpi)
+        lay_dpi.addWidget(self.spin_dpi)
+        lay_dpi.addStretch()
+        lay_opzioni.addLayout(lay_dpi)
+
+        lay_corso = QHBoxLayout()
+        self.txt_path = QLineEdit()
+        self.txt_path.setPlaceholderText("Seleziona la cartella di destinazione...")
+        btn_browse = QPushButton("Sfoglia...")
+        btn_browse.clicked.connect(self.scegli_cartella)
+        lay_corso.addWidget(self.txt_path)
+        lay_corso.addWidget(btn_browse)
+        lay_opzioni.addLayout(lay_corso)
+
+        lay_opzioni.addStretch()
+
+        # Pulsanti separati per PNG e PDF
+        lay_btn = QHBoxLayout()
         self.btn_png = QPushButton("Esporta PNG")
-        self.btn_png.setStyleSheet("font-weight: bold; padding: 8px;")
-        self.btn_png.clicked.connect(lambda: self.esegui_esportazione("png"))
+        self.btn_png.clicked.connect(lambda: self.avvia_esportazione("png"))
         
         self.btn_pdf = QPushButton("Esporta PDF")
-        self.btn_pdf.setStyleSheet("font-weight: bold; padding: 8px;")
-        self.btn_pdf.clicked.connect(lambda: self.esegui_esportazione("pdf"))
+        self.btn_pdf.clicked.connect(lambda: self.avvia_esportazione("pdf"))
         
-        btn_layout.addWidget(self.btn_png)
-        btn_layout.addWidget(self.btn_pdf)
-        layout_principale.addLayout(btn_layout)
-        
-        self.setLayout(layout_principale)
-        
-    def esegui_esportazione(self, formato):
-        if not self.layouts_disponibili:
-            QMessageBox.warning(self, "Attenzione", "Nessun layout di stampa trovato nel progetto.")
+        lay_btn.addWidget(self.btn_png)
+        lay_btn.addWidget(self.btn_pdf)
+        lay_opzioni.addLayout(lay_btn)
+
+        layout_tool.addWidget(box_opzioni, 1)
+        main_layout.addWidget(widget_interfaccia, stretch=3)
+
+        # --- 2. PANNELLO GUIDA (A DESTRA) ---
+        widget_guida = QWidget()
+        widget_guida.setStyleSheet("background-color: #ffffff; border: 1px solid #dcdcdc; border-radius: 8px;")
+        layout_dx = QVBoxLayout(widget_guida)
+        layout_dx.setContentsMargins(8, 8, 8, 8)
+
+        lbl_titolo_guida = QLabel("📖 Guida Passo-Passo")
+        lbl_titolo_guida.setStyleSheet("color: #0078d7; font-weight: bold; font-size: 13px; border: none; background: transparent; margin-bottom: 4px;")
+        layout_dx.addWidget(lbl_titolo_guida)
+
+        txt_guida = QTextEdit()
+        txt_guida.setReadOnly(True)
+        txt_guida.setHtml(f"<div style='color: #333333; font-size: 12px; line-height: 1.5;'>{guida_testo}</div>")
+        txt_guida.setStyleSheet("background-color: #ffffff; color: #222222; border: 1px solid #cccccc; border-radius: 4px; padding: 8px;")
+        layout_dx.addWidget(txt_guida)
+
+        main_layout.addWidget(widget_guida, stretch=1)
+
+    def scegli_cartella(self):
+        cartella = QFileDialog.getExistingDirectory(self, "Scegli la cartella di destinazione", "C:\\Users\\userm\\Desktop")
+        if cartella:
+            self.txt_path.setText(cartella)
+
+    def avvia_esportazione(self, formato):
+        if not self.tutti_i_layout:
+            QMessageBox.warning(self, "Attenzione", "Non ci sono layout di stampa creati in questo progetto!")
             return
-            
-        index_selezionato = self.cmb_layouts.currentIndex()
-        layout_scelto = self.layouts_disponibili[index_selezionato]
+
+        layout_scelti = [item.text() for item in self.lista_widget.selectedItems()]
+        if not layout_scelti:
+            QMessageBox.warning(self, "Attenzione", "Seleziona almeno un layout dalla lista a sinistra.")
+            return
+
+        cartella_destinazione = self.txt_path.text().strip()
+        if not cartella_destinazione:
+            QMessageBox.warning(self, "Attenzione", "Seleziona una cartella di destinazione valida.")
+            return
+
+        percorso_out = Path(cartella_destinazione)
         valore_dpi = float(self.spin_dpi.value())
         
-        if formato == "pdf":
-            filtro = "Documento PDF (*.pdf)"
-            titolo = "Salva Layout in PDF"
+        print(f"Inizio esportazione di {len(layout_scelti)} elementi in formato {formato.upper()} (DPI: {int(valore_dpi)})...\n" + "-"*50)
+        
+        elementi_generati = 0
+        
+        # Configurazione delle impostazioni in base al formato scelto
+        if formato == "png":
+            impostazioni = QgsLayoutExporter.ImageExportSettings()
+            impostazioni.dpi = valore_dpi
+            ext = "png"
         else:
-            filtro = "Immagine PNG (*.png)"
-            titolo = "Salva Layout in PNG"
-            
-        percorso_file, _ = QFileDialog.getSaveFileName(
-            self, 
-            titolo, 
-            os.path.expanduser("~"), 
-            filtro
-        )
+            impostazioni = QgsLayoutExporter.PdfExportSettings()
+            impostazioni.dpi = valore_dpi
+            ext = "pdf"
         
-        if not percorso_file:
-            return
+        for nome_layout in layout_scelti:
+            layout = self.layout_manager.layoutByName(nome_layout)
             
-        exporter = QgsLayoutExporter(layout_scelto)
-        
-        try:
-            if formato == "pdf":
-                if not percorso_file.lower().endswith('.pdf'):
-                    percorso_file += '.pdf'
-                settings = QgsLayoutExporter.PdfExportSettings()
-                settings.dpi = valore_dpi
-                risultato = exporter.exportToPdf(percorso_file, settings)
-            else:
-                if not percorso_file.lower().endswith('.png'):
-                    percorso_file += '.png'
-                settings = QgsLayoutExporter.ImageExportSettings()
-                settings.dpi = valore_dpi
-                risultato = exporter.exportToImage(percorso_file, settings)
+            if layout:
+                esportatore = QgsLayoutExporter(layout)
+                atlante = layout.atlas()
                 
-            if risultato == QgsLayoutExporter.Success:
-                QMessageBox.information(
-                    self, 
-                    "Successo", 
-                    f"Esportazione in {formato.upper()} completata!\nFile: {percorso_file}\nDPI: {int(valore_dpi)}"
-                )
-                self.accept()
-            else:
-                QMessageBox.critical(self, "Errore", "Errore riscontrato durante l'esportazione del layout.")
-        except Exception as e:
-            QMessageBox.critical(self, "Errore", f"Errore imprevisto:\n{str(e)}")
+                if atlante.enabled():
+                    print(f"[ATLANTE RILEVATO] Generazione {formato.upper()} per l'atlante: {nome_layout}")
+                    if formato == "png":
+                        prefisso_file = str(percorso_out / f"{nome_layout}_pagina_")
+                        risultato = esportatore.exportToImage(atlante, prefisso_file, "png", impostazioni)
+                    else:
+                        percorso_completo = str(percorso_out / f"{nome_layout}_atlante.pdf")
+                        risultato = esportatore.exportToPdf(atlante, percorso_completo, impostazioni)
+                else:
+                    percorso_completo = str(percorso_out / f"{nome_layout}.{ext}")
+                    if formato == "png":
+                        risultato = esportatore.exportToImage(percorso_completo, impostazioni)
+                    else:
+                        risultato = esportatore.exportToPdf(percorso_completo, impostazioni)
+                
+                if risultato == QgsLayoutExporter.Success:
+                    print(f"[OK] Esportato correttamente elemento: {nome_layout}")
+                    elementi_generati += 1
+                else:
+                    print(f"[ERRORE] Fallimento su: {nome_layout} (Codice errore: {risultato})")
+                
+        print("-"*50)
+        print(f"PROCESSO CONCLUSO! Generati {elementi_generati} elementi grafici in {formato.upper()}.")
+        QMessageBox.information(self, "Fatto!", f"Esportazione in {formato.upper()} completata con successo!")
+        self.accept()
 
 def run():
-    """Funzione d'ingresso standard richiesta per l'esecuzione in QGIS."""
-    dialog = EsportazioneLayoutDialog()
-    dialog.exec_()
-
-if __name__ == '__main__':
-    run()
+    guida_testo = globals().get("MAXXI_GUIDA", "Nessuna guida disponibile.")
+    dlg = EsportazioneLayoutDialog(guida_testo, iface.mainWindow())
+    dlg.show()
+    iface.maxxi_esportazione_dlg = dlg

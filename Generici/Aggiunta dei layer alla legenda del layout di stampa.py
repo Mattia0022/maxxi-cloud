@@ -12,7 +12,6 @@ from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
 )
 
-
 class DialogoAzioneELayer(QDialog):
     def __init__(self, layer_names, parent=None):
         super().__init__(parent)

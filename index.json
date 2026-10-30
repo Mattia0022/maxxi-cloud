@@ -1,7 +1,7 @@
 {
   "Generici": {
     "Modifica Layer a Legenda": {
-      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Aggiunta%20dei%20layer%20alla%20legenda%20del%20layout%20di%20stampa.py",
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Modifica%20Layer%20a%20Legenda.py",
       "descrizione": "Permette di aggiungere o rimuovere in modo mirato un layer selezionato dalle singole legende di uno o più layout di stampa prescelti, con ricerca rapida e aggiornamento istantaneo.",
       "guida": "1. Avvia lo script, scegli l'operazione (aggiungi o rimuovi) e seleziona il layer tramite la ricerca rapida.<br>2. Seleziona i layout di stampa desiderati.<br>3. Scegli le specifiche legende da modificare e conferma per aggiornare le tavole."
     },
@@ -55,25 +55,4 @@
     "Gestione Foto e Layout": {
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/gestione_foto_plugin.py",
       "descrizione": "Ottimizza l'archiviazione, l'associazione e l'impaginazione rapida delle fotografie aeree da drone all'interno dei layout cartografici.",
-      "guida": "1. Specifica la directory di origine contenente le foto georeferenziate.<br>2. Verifica l'associazione degli scatti con i punti o i vettori.<br>3. Genera la struttura grafica o il report di stampa."
-    },
-    "Rinomina File Metashape": {
-      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/rinomina_file_metashape.py",
-      "descrizione": "Rinomina automaticamente e in blocco i file di piano o gli elaborati da Agisoft Metashape secondo le convenzioni di nomenclatura standard.",
-      "guida": "1. Seleziona la cartella di lavoro contenente i file da elaborare.<br>2. Controlla l'anteprima delle modifiche nella tabella di riscontro.<br>3. Clicca su 'Applica Rinominazione' per confermare."
-    },
-    "Sezioni trasversali a partire dai punti GNSS": {
-      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/Sezioni%20trasversali%20a%20partire%20dai%20punti%20GNSS.py",
-      "descrizione": "Estrae le coordinate e le quote da punti GNSS selezionati per generare script AutoCAD (.scr) di profili e sezioni trasversali proiettate.",
-      "guida": "1. Seleziona il layer di punti e i punti desiderati sulla mappa.<br>2. Scegli la colonna della quota o la geometria 3D.<br>3. Salva e genera lo script AutoCAD."
-    }
-  },
-  "Impianti": {},
-  "Strutture": {
-    "Inserimento foto per etichette": {
-      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Strutture/Inserimento%20foto%20per%20etichette.py",
-      "descrizione": "Crea o aggiorna i campi FOTO, POS_X e POS_Y in formato decimale su layer vettoriali multipli, associando automaticamente i percorsi delle immagini tramite corrispondenza di attributi.",
-      "guida": "1. Seleziona uno o più layer vettoriali dalla lista (usa la ricerca rapida).<br>2. Scegli la colonna della tabella attributi da confrontare con i nomi delle foto.<br>3. Seleziona le immagini dal computer e avvia l'elaborazione."
-    }
-  }
-}
+      "guida": "1. Spec

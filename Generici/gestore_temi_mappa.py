@@ -3,23 +3,22 @@ from qgis.utils import iface
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit,
-    QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
-    QInputDialog, QLabel, QAbstractItemView
+    QListWidget, QListWidgetItem, QMessageBox, QInputDialog, QLabel, QAbstractItemView
 )
 from qgis.core import QgsProject
 
-class MatriceTemiLayer(QDialog):
+class GestoreTemiVerticale(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Matrice Completa: Layer & Temi di Mappa")
-        self.resize(1150, 700)
+        self.setWindowTitle("Gestione Rapida Layer-Temi (Verticale)")
+        self.resize(1000, 650)
         self.setStyleSheet("font-size: 11pt;")
 
         self.project = QgsProject.instance()
         self.themes = self.project.mapThemeCollection()
 
-        layout = QVBoxLayout(self)
-        layout.setSpacing(10)
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(10)
 
         # ----------------------------------------------------
         # BARRA SUPERIORE: GESTIONE TEMI E SALVATAGGIO
@@ -38,117 +37,122 @@ class MatriceTemiLayer(QDialog):
 
         lay_top.addStretch()
 
-        btn_salva = QPushButton("💾 Salva Tutte le Modifiche")
-        btn_salva.setStyleSheet("background-color: #e8f5e9; font-weight: bold; padding: 8px 12px; border-radius: 4px;")
-        btn_salva.clicked.connect(self.salva_tutto)
+        btn_salva = QPushButton("💾 Salva Modifiche per i Layer Selezionati")
+        btn_salva.setStyleSheet("background-color: #e8f5e9; font-weight: bold; padding: 8px 14px; border-radius: 4px;")
+        btn_salva.clicked.connect(self.salva_modifiche)
         lay_top.addWidget(btn_salva)
 
-        layout.addLayout(lay_top)
+        main_layout.addLayout(lay_top)
 
         # ----------------------------------------------------
-        # BARRA DI RICERCA E AZIONI RAPIDE IN MASSA
+        # PANNELLI CENTRALI (2 Colonne Verticali)
         # ----------------------------------------------------
-        lay_tools = QHBoxLayout()
+        lay_split = QHBoxLayout()
+        lay_split.setSpacing(15)
+
+        # --- COLONNA SINISTRA: LAYER ---
+        lay_sinistra = QVBoxLayout()
+        lay_sinistra.addWidget(QLabel("<b>1. Seleziona Layer (uno o più con CTRL/SHIFT):</b>"))
         
-        lay_tools.addWidget(QLabel("🔍 Cerca:"))
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Filtra per nome layer...")
-        self.search_input.textChanged.connect(self.filtra_tabella)
-        lay_tools.addWidget(self.search_input, 2)
+        self.search_layer = QLineEdit()
+        self.search_layer.setPlaceholderText("🔍 Cerca layer...")
+        self.search_layer.textChanged.connect(self.filtra_layer)
+        lay_sinistra.addWidget(self.search_layer)
 
-        # Pulsanti rapidi per gestire più layer su TUTTI i temi in un click
-        btn_tutti_si = QPushButton("✔ Spunta Sel. in TUTTI i Temi")
-        btn_tutti_si.setStyleSheet("background-color: #e0f7fa; padding: 5px;")
-        btn_tutti_si.clicked.connect(lambda: self.imposta_selezionati_in_tutti(True))
-        lay_tools.addWidget(btn_tutti_si)
+        self.list_layers = QListWidget()
+        self.list_layers.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.list_layers.itemSelectionChanged.connect(self.aggiorna_stato_temi_destra)
+        lay_sinistra.addWidget(self.list_layers)
 
-        btn_tutti_no = QPushButton("✖ Togli da TUTTI i Temi")
-        btn_tutti_no.setStyleSheet("background-color: #fce4ec; padding: 5px;")
-        btn_tutti_no.clicked.connect(lambda: self.imposta_selezionati_in_tutti(False))
-        lay_tools.addWidget(btn_tutti_no)
+        lay_split.addLayout(lay_sinistra, 1)
 
-        layout.addLayout(lay_tools)
+        # --- COLONNA DESTRA: TEMI (IN VERTICALE) ---
+        lay_destra = QVBoxLayout()
+        lay_destra.addWidget(QLabel("<b>2. In quali temi devono essere visibili? (Spunta/Togli):</b>"))
+        
+        self.search_tema = QLineEdit()
+        self.search_tema.setPlaceholderText("🔍 Cerca tema...")
+        self.search_tema.textChanged.connect(self.filtra_temi)
+        lay_destra.addWidget(self.search_tema)
 
-        # ----------------------------------------------------
-        # TABELLA A MATRICE (Layer x Temi)
-        # ----------------------------------------------------
-        self.tabella = QTableWidget()
-        self.tabella.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tabella.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        layout.addWidget(self.tabella)
+        self.list_temi = QListWidget()
+        lay_destra.addWidget(self.list_temi)
 
-        self.carica_dati()
+        # Pulsanti rapidi per la lista dei temi
+        lay_temi_rec = QHBoxLayout()
+        btn_tutti_si = QPushButton("✔ Spunta Tutti")
+        btn_tutti_si.clicked.connect(lambda: self.imposta_tutti_temi(True))
+        btn_tutti_no = QPushButton("✖ Togli Tutti")
+        btn_tutti_no.clicked.connect(lambda: self.imposta_tutti_temi(False))
+        lay_temi_rec.addWidget(btn_tutti_si)
+        lay_temi_rec.addWidget(btn_tutti_no)
+        lay_destra.addLayout(lay_temi_rec)
 
-    def get_visibilita_layer_in_tema(self, theme_name, layer_id):
-        visible_layers = self.themes.mapThemeVisibleLayers(theme_name)
-        return any(layer.id() == layer_id for layer in visible_layers)
+        lay_split.addLayout(lay_destra, 1)
+        main_layout.addLayout(lay_split)
 
-    def carica_dati(self):
-        self.tabella.blockSignals(True)
-        self.tabella.clear()
+        self.carica_layers()
+        self.carica_temi_struttura()
 
-        tema_names = sorted(self.themes.mapThemes())
+    def carica_layers(self):
+        self.list_layers.blockSignals(True)
+        self.list_layers.clear()
         layers = sorted(self.project.mapLayers().values(), key=lambda l: l.name().lower())
+        for layer in layers:
+            item = QListWidgetItem(layer.name())
+            item.setData(Qt.UserRole, layer.id())
+            self.list_layers.addItem(item)
+        self.list_layers.blockSignals(False)
+        if self.list_layers.count() > 0:
+            self.list_layers.setCurrentRow(0)
 
-        if not tema_names:
-            self.tabella.setColumnCount(1)
-            self.tabella.setHorizontalHeaderLabels(["Layer Progetto (Usa 'Crea Nuovo Tema' in alto per iniziare!)"])
-            self.tabella.setRowCount(len(layers))
-            for idx, layer in enumerate(layers):
-                item = QTableWidgetItem(layer.name())
-                item.setFlags(Qt.ItemIsEnabled)
-                self.tabella.setItem(idx, 0, item)
-            self.tabella.blockSignals(False)
-            return
+    def carica_temi_struttura(self):
+        self.list_temi.clear()
+        tema_names = sorted(self.themes.mapThemes())
+        for tema_name in tema_names:
+            item = QListWidgetItem(tema_name)
+            item.setData(Qt.UserRole, tema_name)
+            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+            item.setCheckState(Qt.Unchecked)
+            self.list_temi.addItem(item)
 
-        columns = ["Layer Progetto"] + tema_names
-        self.tabella.setColumnCount(len(columns))
-        self.tabella.setHorizontalHeaderLabels(columns)
-        self.tabella.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        for c in range(1, len(columns)):
-            self.tabella.horizontalHeader().setSectionResizeMode(c, QHeaderView.ResizeToContents)
-
-        self.tabella.setRowCount(len(layers))
-
-        for r_idx, layer in enumerate(layers):
-            item_layer = QTableWidgetItem(layer.name())
-            item_layer.setData(Qt.UserRole, layer.id())
-            item_layer.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-            self.tabella.setItem(r_idx, 0, item_layer)
-
-            for c_idx, tema_name in enumerate(tema_names, start=1):
-                visibile = self.get_visibilita_layer_in_tema(tema_name, layer.id())
-                item_chk = QTableWidgetItem()
-                item_chk.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-                item_chk.setCheckState(Qt.Checked if visibile else Qt.Unchecked)
-                self.tabella.setItem(r_idx, c_idx, item_chk)
-
-        self.tabella.blockSignals(False)
-
-    def filtra_tabella(self, text):
+    def filtra_layer(self, text):
         text_lower = text.lower()
-        for r in range(self.tabella.rowCount()):
-            item = self.tabella.item(r, 0)
-            if item:
-                match = text_lower in item.text().lower()
-                self.tabella.setRowHidden(r, not match)
+        for i in range(self.list_layers.count()):
+            item = self.list_layers.item(i)
+            item.setHidden(text_lower not in item.text().lower())
 
-    def imposta_selezionati_in_tutti(self, stato):
-        righe_sel = set(item.row() for item in self.tabella.selectedItems())
-        if not righe_sel:
-            QMessageBox.warning(self, "Attenzione", "Seleziona una o più righe di layer nella tabella (puoi usare CTRL o SHIFT).")
+    def filtra_temi(self, text):
+        text_lower = text.lower()
+        for i in range(self.list_temi.count()):
+            item = self.list_temi.item(i)
+            item.setHidden(text_lower not in item.text().lower())
+
+    def aggiorna_stato_temi_destra(self):
+        selected_items = self.list_layers.selectedItems()
+        if not selected_items:
+            for i in range(self.list_temi.count()):
+                self.list_temi.item(i).setCheckState(Qt.Unchecked)
             return
+
+        # Prende il primo layer selezionato come riferimento per mostrare lo stato attuale
+        primo_layer_id = selected_items[0].data(Qt.UserRole)
         
+        for i in range(self.list_temi.count()):
+            item_tema = self.list_temi.item(i)
+            tema_name = item_tema.data(Qt.UserRole)
+            
+            visible_layers = self.themes.mapThemeVisibleLayers(tema_name)
+            visibile = any(l.id() == primo_layer_id for l in visible_layers if l)
+            
+            item_tema.setCheckState(Qt.Checked if visibile else Qt.Unchecked)
+
+    def imposta_tutti_temi(self, stato):
         state_chk = Qt.Checked if stato else Qt.Unchecked
-        self.tabella.blockSignals(True)
-        for r in righe_sel:
-            if not self.tabella.isRowHidden(r):
-                for c in range(1, self.tabella.columnCount()):
-                    item = self.tabella.item(r, c)
-                    if item:
-                        item.setCheckState(state_chk)
-        self.tabella.blockSignals(False)
-        QMessageBox.information(self, "Fatto", f"Stato aggiornato per i layer delle {len(righe_sel)} righe selezionate. Ricorda di cliccare 'Salva Tutte le Modifiche' in alto!")
+        for i in range(self.list_temi.count()):
+            item = self.list_temi.item(i)
+            if not item.isHidden():
+                item.setCheckState(state_chk)
 
     def crea_tema(self):
         nome, ok = QInputDialog.getText(self, "Nuovo Tema", "Inserisci il nome del nuovo tema di mappa:")
@@ -161,7 +165,7 @@ class MatriceTemiLayer(QDialog):
             model = iface.layerTreeView().layerTreeModel()
             rec = self.themes.createThemeFromCurrentState(root, model)
             self.themes.insert(nome, rec)
-            self.carica_dati()
+            self.carica_temi_struttura()
             QMessageBox.information(self, "Successo", f"Tema '{nome}' creato con successo!")
 
     def elimina_tema(self):
@@ -174,47 +178,46 @@ class MatriceTemiLayer(QDialog):
         if ok and tema_scelto:
             if QMessageBox.question(self, "Conferma", f"Vuoi davvero eliminare il tema '{tema_scelto}'?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
                 self.themes.removeMapTheme(tema_scelto)
-                self.carica_dati()
+                self.carica_temi_struttura()
                 QMessageBox.information(self, "Eliminato", f"Tema '{tema_scelto}' eliminato.")
 
-    def salva_tutto(self):
-        root = self.project.layerTreeRoot()
-        model = iface.layerTreeView().layerTreeModel()
-        tema_names = sorted(self.themes.mapThemes())
-
-        if not tema_names:
-            QMessageBox.warning(self, "Attenzione", "Nessun tema da aggiornare.")
+    def salva_modifiche(self):
+        selected_layer_items = self.list_layers.selectedItems()
+        if not selected_layer_items:
+            QMessageBox.warning(self, "Attenzione", "Seleziona almeno un layer nella colonna di sinistra.")
             return
 
-        for c_idx, tema_name in enumerate(tema_names, start=1):
+        layer_ids = [item.data(Qt.UserRole) for item in selected_layer_items]
+        root = self.project.layerTreeRoot()
+        model = iface.layerTreeView().layerTreeModel()
+
+        # Raccoglie lo stato desiderato per ciascun tema dalla lista di destra
+        temi_stati = {}
+        for i in range(self.list_temi.count()):
+            item_tema = self.list_temi.item(i)
+            tema_name = item_tema.data(Qt.UserRole)
+            temi_stati[tema_name] = (item_tema.checkState() == Qt.Checked)
+
+        # Applica le modifiche tema per tema
+        for tema_name, deve_essere_visibile in temi_stati.items():
             self.themes.applyTheme(tema_name, root, model)
 
-            for r_idx in range(self.tabella.rowCount()):
-                item_layer = self.tabella.item(r_idx, 0)
-                if not item_layer:
-                    continue
-                layer_id = item_layer.data(Qt.UserRole)
-                
-                item_chk = self.tabella.item(r_idx, c_idx)
-                if item_chk:
-                    deve_essere_visibile = (item_chk.checkState() == Qt.Checked)
-                    
-                    node = root.findLayer(layer_id)
-                    if node:
-                        node.setItemVisibilityChecked(deve_essere_visibile)
-                        if deve_essere_visibile:
-                            p = node.parent()
-                            while p and p != root:
-                                p.setItemVisibilityChecked(True)
-                                p = p.parent()
+            for layer_id in layer_ids:
+                node = root.findLayer(layer_id)
+                if node:
+                    node.setItemVisibilityChecked(deve_essere_visibile)
+                    if deve_essere_visibile:
+                        p = node.parent()
+                        while p and p != root:
+                            p.setItemVisibilityChecked(True)
+                            p = p.parent()
 
             rec = self.themes.createThemeFromCurrentState(root, model)
             self.themes.insert(tema_name, rec)
 
-        QMessageBox.information(self, "Completato", "Tutte le modifiche ai temi sono state salvate con successo!")
+        QMessageBox.information(self, "Completato", f"Stato aggiornato con successo per i {len(layer_ids)} layer selezionati in tutti i temi!")
 
 def run():
-    # Gestione finestra singola (evita duplicati)
     if hasattr(iface, "maxxi_matrice_dlg") and iface.maxxi_matrice_dlg is not None:
         try:
             if iface.maxxi_matrice_dlg.isVisible():
@@ -224,7 +227,7 @@ def run():
         except RuntimeError:
             pass
 
-    iface.maxxi_matrice_dlg = MatriceTemiLayer(iface.mainWindow())
+    iface.maxxi_matrice_dlg = GestoreTemiVerticale(iface.mainWindow())
     iface.maxxi_matrice_dlg.show()
 
 run()

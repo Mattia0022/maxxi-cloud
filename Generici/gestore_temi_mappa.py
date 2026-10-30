@@ -6,20 +6,19 @@ from qgis.PyQt.QtWidgets import (
     QListWidget, QListWidgetItem, QMessageBox, QInputDialog, QLabel, 
     QAbstractItemView, QWidget, QTextBrowser
 )
-from qgis.core import QgsProject
+from qgis.core import QgsProject, QgsLayerTreeGroup, QgsLayerTreeLayer
 
 class GestoreTemiVerticale(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Gestione Rapida Layer-Temi")
+        self.setWindowTitle("Gestione Rapida Layer e Gruppi nei Temi")
         self.resize(1300, 700)
         self.setStyleSheet("font-size: 11pt;")
 
         self.project = QgsProject.instance()
         self.themes = self.project.mapThemeCollection()
 
-        # Cache interna in memoria per non perdere le modifiche prima del salvataggio
-        # Struttura: { layer_id: set(nomi_temi_in_cui_e_visibile) }
+        # Cache interna in memoria per layer e gruppi: { chiave_elemento: set(temi_attivi) }
         self.cache_stati = {}
         self._inizializza_cache()
 
@@ -51,18 +50,18 @@ class GestoreTemiVerticale(QDialog):
         main_layout.addLayout(lay_top)
 
         # ----------------------------------------------------
-        # PANNELLI CENTRALI A 3 COLONNE (Layer | Temi | Guida)
+        # PANNELLI CENTRALI A 3 COLONNE (Elementi | Temi | Guida)
         # ----------------------------------------------------
         lay_split = QHBoxLayout()
         lay_split.setSpacing(15)
 
-        # --- COLONNA 1: LAYER ---
+        # --- COLONNA 1: LAYER E GRUPPI ---
         lay_sinistra = QVBoxLayout()
-        lay_sinistra.addWidget(QLabel("<b>1. Seleziona Layer (uno o più con CTRL/SHIFT):</b>"))
+        lay_sinistra.addWidget(QLabel("<b>1. Seleziona Layer o Gruppi (anche multipli):</b>"))
         
         self.search_layer = QLineEdit()
-        self.search_layer.setPlaceholderText("🔍 Cerca layer...")
-        self.search_layer.textChanged.connect(self.filtra_layer)
+        self.search_layer.setPlaceholderText("🔍 Cerca layer o gruppo...")
+        self.search_layer.textChanged.connect(self.filtra_elementi)
         lay_sinistra.addWidget(self.search_layer)
 
         self.list_layers = QListWidget()
@@ -105,18 +104,17 @@ class GestoreTemiVerticale(QDialog):
         guida_browser.setOpenExternalLinks(True)
         guida_browser.setHtml("""
             <h3 style='color: #0277bd; margin-top: 0;'>📖 Come funziona</h3>
-            <p>Gestisci centinaia di layer su decine di temi senza scorrimenti orizzontali.</p>
             
             <hr style='border: 0; border-top: 1px solid #ccc;'>
             
-            <h4 style='color: #333;'>1. Selezione Layer</h4>
+            <h4 style='color: #333;'>1. Selezione Elementi</h4>
             <ul>
-                <li>Cerca o seleziona uno o più layer a sinistra (usa <code>CTRL</code> o <code>SHIFT</code>).</li>
+                <li>Puoi selezionare sia singoli <b>Layer</b> che interi <b>Gruppi</b> (usa <code>CTRL</code> o <code>SHIFT</code> per selezioni multiple).</li>
             </ul>
 
             <h4 style='color: #333;'>2. Modifiche in Memoria</h4>
             <ul>
-                <li>Spunta o togli i temi al centro: <b>le modifiche vengono memorizzate subito in memoria</b> mentre clicchi.</li>
+                <li>Spunta o togli i temi al centro: <b>le modifiche vengono memorizzate subito in memoria</b>.</li>
                 <li>Puoi cambiare selezione a sinistra senza perdere nulla.</li>
             </ul>
 
@@ -135,29 +133,79 @@ class GestoreTemiVerticale(QDialog):
         lay_split.addLayout(lay_destra, 1)
         main_layout.addLayout(lay_split)
 
-        self.carica_layers()
+        self.carica_elementi_albero()
         self.carica_temi_struttura()
+
+    def get_group_path(self, group_node):
+        parts = []
+        curr = group_node
+        while curr and not curr.isRoot():
+            parts.insert(0, curr.name())
+            curr = curr.parent()
+        return "/".join(parts)
 
     def _inizializza_cache(self):
         tema_names = self.themes.mapThemes()
-        layers = self.project.mapLayers().values()
-        for layer in layers:
-            layer_id = layer.id()
-            temi_visibili = set()
-            for tema_name in tema_names:
-                visible_layers = self.themes.mapThemeVisibleLayers(tema_name)
-                if any(l and l.id() == layer_id for l in visible_layers):
-                    temi_visibili.add(tema_name)
-            self.cache_stati[layer_id] = temi_visibili
+        root = self.project.layerTreeRoot()
+        self.cache_stati = {}
 
-    def carica_layers(self):
+        def collect_keys(node):
+            keys = []
+            for child in node.children():
+                if isinstance(child, QgsLayerTreeGroup):
+                    keys.append(f"G:{self.get_group_path(child)}")
+                    keys.extend(collect_keys(child))
+                elif isinstance(child, QgsLayerTreeLayer):
+                    if child.layer():
+                        keys.append(f"L:{child.layer().id()}")
+            return keys
+
+        all_keys = collect_keys(root)
+        for k in all_keys:
+            self.cache_stati[k] = set()
+
+        for tema_name in tema_names:
+            clone_root = root.clone()
+            self.themes.applyTheme(tema_name, clone_root, None)
+
+            def check_clone_node(node):
+                for child in node.children():
+                    if isinstance(child, QgsLayerTreeGroup):
+                        g_key = f"G:{self.get_group_path(child)}"
+                        if child.itemVisibilityChecked():
+                            self.cache_stati[g_key].add(tema_name)
+                        check_clone_node(child)
+                    elif isinstance(child, QgsLayerTreeLayer):
+                        layer = child.layer()
+                        if layer:
+                            l_key = f"L:{layer.id()}"
+                            if child.itemVisibilityChecked():
+                                self.cache_stati[l_key].add(tema_name)
+
+            check_clone_node(clone_root)
+
+    def carica_elementi_albero(self):
         self.list_layers.blockSignals(True)
         self.list_layers.clear()
-        layers = sorted(self.project.mapLayers().values(), key=lambda l: l.name().lower())
-        for layer in layers:
-            item = QListWidgetItem(layer.name())
-            item.setData(Qt.UserRole, layer.id())
-            self.list_layers.addItem(item)
+        root = self.project.layerTreeRoot()
+
+        def add_nodes(node, indent=0):
+            for child in node.children():
+                prefix = "    " * indent
+                if isinstance(child, QgsLayerTreeGroup):
+                    item = QListWidgetItem(f"{prefix}📁 {child.name()}")
+                    item.setData(Qt.UserRole, f"G:{self.get_group_path(child)}")
+                    item.setForeground(Qt.darkBlue)
+                    self.list_layers.addItem(item)
+                    add_nodes(child, indent + 1)
+                elif isinstance(child, QgsLayerTreeLayer):
+                    layer = child.layer()
+                    if layer:
+                        item = QListWidgetItem(f"{prefix} 📄 {layer.name()}")
+                        item.setData(Qt.UserRole, f"L:{layer.id()}")
+                        self.list_layers.addItem(item)
+
+        add_nodes(root)
         self.list_layers.blockSignals(False)
         if self.list_layers.count() > 0:
             self.list_layers.setCurrentRow(0)
@@ -174,7 +222,7 @@ class GestoreTemiVerticale(QDialog):
             self.list_temi.addItem(item)
         self.list_temi.blockSignals(False)
 
-    def filtra_layer(self, text):
+    def filtra_elementi(self, text):
         text_lower = text.lower()
         for i in range(self.list_layers.count()):
             item = self.list_layers.item(i)
@@ -196,20 +244,18 @@ class GestoreTemiVerticale(QDialog):
             self.list_temi.blockSignals(False)
             return
 
-        selected_layer_ids = [item.data(Qt.UserRole) for item in selected_items]
+        selected_keys = [item.data(Qt.UserRole) for item in selected_items]
         
         for i in range(self.list_temi.count()):
             item_tema = self.list_temi.item(i)
             tema_name = item_tema.data(Qt.UserRole)
             
-            # Verifica nella cache se il tema è attivo per TUTTI i layer selezionati
-            tutti_attivi = all(tema_name in self.cache_stati.get(l_id, set()) for l_id in selected_layer_ids)
+            tutti_attivi = all(tema_name in self.cache_stati.get(k, set()) for k in selected_keys)
             item_tema.setCheckState(Qt.Checked if tutti_attivi else Qt.Unchecked)
             
         self.list_temi.blockSignals(False)
 
     def on_tema_item_changed(self, item):
-        # Aggiorna immediatamente la cache in memoria quando l'utente spunta/toglie un tema
         if not item.flags() & Qt.ItemIsUserCheckable:
             return
         
@@ -219,22 +265,22 @@ class GestoreTemiVerticale(QDialog):
 
         tema_name = item.data(Qt.UserRole)
         is_checked = (item.checkState() == Qt.Checked)
-        selected_layer_ids = [li.data(Qt.UserRole) for li in selected_items]
+        selected_keys = [li.data(Qt.UserRole) for li in selected_items]
 
-        for layer_id in selected_layer_ids:
-            if layer_id not in self.cache_stati:
-                self.cache_stati[layer_id] = set()
+        for key in selected_keys:
+            if key not in self.cache_stati:
+                self.cache_stati[key] = set()
             
             if is_checked:
-                self.cache_stati[layer_id].add(tema_name)
+                self.cache_stati[key].add(tema_name)
             else:
-                self.cache_stati[layer_id].discard(tema_name)
+                self.cache_stati[key].discard(tema_name)
 
     def imposta_tutti_temi(self, stato):
         self.list_temi.blockSignals(True)
         state_chk = Qt.Checked if stato else Qt.Unchecked
         selected_items = self.list_layers.selectedItems()
-        selected_layer_ids = [li.data(Qt.UserRole) for li in selected_items]
+        selected_keys = [li.data(Qt.UserRole) for li in selected_items]
 
         for i in range(self.list_temi.count()):
             item = self.list_temi.item(i)
@@ -242,13 +288,13 @@ class GestoreTemiVerticale(QDialog):
                 item.setCheckState(state_chk)
                 tema_name = item.data(Qt.UserRole)
                 if selected_items:
-                    for layer_id in selected_layer_ids:
-                        if layer_id not in self.cache_stati:
-                            self.cache_stati[layer_id] = set()
+                    for key in selected_keys:
+                        if key not in self.cache_stati:
+                            self.cache_stati[key] = set()
                         if stato:
-                            self.cache_stati[layer_id].add(tema_name)
+                            self.cache_stati[key].add(tema_name)
                         else:
-                            self.cache_stati[layer_id].discard(tema_name)
+                            self.cache_stati[key].discard(tema_name)
                             
         self.list_temi.blockSignals(False)
 
@@ -264,11 +310,25 @@ class GestoreTemiVerticale(QDialog):
             rec = self.themes.createThemeFromCurrentState(root, model)
             self.themes.insert(nome, rec)
             
-            # Aggiorna la cache per includere il nuovo tema
-            for layer_id in self.cache_stati:
-                visible_layers = self.themes.mapThemeVisibleLayers(nome)
-                if any(l and l.id() == layer_id for l in visible_layers):
-                    self.cache_stati[layer_id].add(nome)
+            clone_root = root.clone()
+            self.themes.applyTheme(nome, clone_root, None)
+            
+            def check_new_theme_node(node):
+                for child in node.children():
+                    if isinstance(child, QgsLayerTreeGroup):
+                        g_key = f"G:{self.get_group_path(child)}"
+                        if child.itemVisibilityChecked():
+                            if g_key in self.cache_stati:
+                                self.cache_stati[g_key].add(nome)
+                        check_new_theme_node(child)
+                    elif isinstance(child, QgsLayerTreeLayer):
+                        layer = child.layer()
+                        if layer:
+                            l_key = f"L:{layer.id()}"
+                            if child.itemVisibilityChecked():
+                                if l_key in self.cache_stati:
+                                    self.cache_stati[l_key].add(nome)
+            check_new_theme_node(clone_root)
 
             self.carica_temi_struttura()
             QMessageBox.information(self, "Successo", f"Tema '{nome}' creato con successo!")
@@ -284,9 +344,8 @@ class GestoreTemiVerticale(QDialog):
             if QMessageBox.question(self, "Conferma", f"Vuoi davvero eliminare il tema '{tema_scelto}'?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
                 self.themes.removeMapTheme(tema_scelto)
                 
-                # Rimuovi il tema eliminato dalla cache
-                for layer_id in self.cache_stati:
-                    self.cache_stati[layer_id].discard(tema_scelto)
+                for key in self.cache_stati:
+                    self.cache_stati[key].discard(tema_scelto)
 
                 self.carica_temi_struttura()
                 QMessageBox.information(self, "Eliminato", f"Tema '{tema_scelto}' eliminato.")
@@ -300,26 +359,40 @@ class GestoreTemiVerticale(QDialog):
             QMessageBox.warning(self, "Attenzione", "Nessun tema da aggiornare.")
             return
 
-        # Scrive la cache in memoria dentro i temi di mappa effettivi di QGIS
         for tema_name in tema_names:
             self.themes.applyTheme(tema_name, root, model)
 
-            for layer_id, temi_attivi in self.cache_stati.items():
-                deve_essere_visibile = (tema_name in temi_attivi)
-                node = root.findLayer(layer_id)
-                if node:
-                    node.setItemVisibilityChecked(deve_essere_visibile)
-                    if deve_essere_visibile:
-                        p = node.parent()
-                        while p and p != root:
-                            p.setItemVisibilityChecked(True)
-                            p = p.parent()
+            def apply_cache_to_node(node):
+                for child in node.children():
+                    if isinstance(child, QgsLayerTreeGroup):
+                        key = f"G:{self.get_group_path(child)}"
+                        deve_essere_visibile = (tema_name in self.cache_stati.get(key, set()))
+                        child.setItemVisibilityChecked(deve_essere_visibile)
+                        if deve_essere_visibile:
+                            p = child.parent()
+                            while p and p != root:
+                                p.setItemVisibilityChecked(True)
+                                p = p.parent()
+                        apply_cache_to_node(child)
+                    elif isinstance(child, QgsLayerTreeLayer):
+                        layer = child.layer()
+                        if layer:
+                            key = f"L:{layer.id()}"
+                            deve_essere_visibile = (tema_name in self.cache_stati.get(key, set()))
+                            child.setItemVisibilityChecked(deve_essere_visibile)
+                            if deve_essere_visibile:
+                                p = child.parent()
+                                while p and p != root:
+                                    p.setItemVisibilityChecked(True)
+                                    p = p.parent()
+
+            apply_cache_to_node(root)
 
             rec = self.themes.createThemeFromCurrentState(root, model)
             self.themes.insert(tema_name, rec)
 
         iface.mapCanvas().refresh()
-        QMessageBox.information(self, "Completato", "Tutte le modifiche memorizzate sono state salvate con successo nel progetto QGIS!")
+        QMessageBox.information(self, "Completato", "Tutte le modifiche memorizzate (layer e gruppi) sono state salvate con successo nel progetto QGIS!")
 
 def run():
     if hasattr(iface, "maxxi_matrice_dlg") and iface.maxxi_matrice_dlg is not None:

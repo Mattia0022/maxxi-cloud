@@ -1,9 +1,9 @@
 {
   "Generici": {
-    "Aggiunta Layer a Legenda": {
+    "Modifica Layer a Legenda": {
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Aggiunta%20dei%20layer%20alla%20legenda%20del%20layout%20di%20stampa.py",
-      "descrizione": "Aggiunge automaticamente un layer selezionato alle legende di uno o più layout di stampa prescelti, aggiornando istantaneamente la visualizzazione.",
-      "guida": "1. Avvia lo script e seleziona il layer di interesse.<br>2. Scegli i layout di stampa da aggiornare tramite la finestra di dialogo.<br>3. Conferma per applicare le modifiche e aggiornare le legende."
+      "descrizione": "Permette di aggiungere o rimuovere in modo mirato un layer selezionato dalle singole legende di uno o più layout di stampa prescelti, con ricerca rapida e aggiornamento istantaneo.",
+      "guida": "1. Avvia lo script, scegli l'operazione (aggiungi o rimuovi) e seleziona il layer tramite la ricerca rapida.<br>2. Seleziona i layout di stampa desiderati.<br>3. Scegli le specifiche legende da modificare e conferma per aggiornare le tavole."
     },
     "Gestore Temi Mappa": {
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/gestore_temi_mappa.py",

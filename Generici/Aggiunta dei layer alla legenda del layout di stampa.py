@@ -43,7 +43,6 @@ class DialogoAzioneELayer(QDialog):
 
         self.list_layer = QListWidget()
         self.list_layer.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.all_layers = layer_names
         for name in layer_names:
             self.list_layer.addItem(QListWidgetItem(name))
         layout.addWidget(self.list_layer)
@@ -55,11 +54,11 @@ class DialogoAzioneELayer(QDialog):
         layout.addWidget(buttons)
 
     def filter_layers(self, text):
-        self.list_layer.clear()
         text_lower = text.lower()
-        for name in self.all_layers:
-            if text_lower in name.lower():
-                self.list_layer.addItem(QListWidgetItem(name))
+        for i in range(self.list_layer.count()):
+            item = self.list_layer.item(i)
+            match = text_lower in item.text().lower()
+            item.setHidden(not match)
 
     def get_data(self):
         azione = self.combo_azione.currentText()
@@ -73,7 +72,7 @@ class DialogoSelezioneLayout(QDialog):
     def __init__(self, layout_names, parent=None):
         super().__init__(parent)
         self.setWindowTitle("1. Selezione Layout di Stampa - QGIS")
-        self.resize(550, 450)
+        self.resize(550, 480)
         self.setStyleSheet("font-size: 11pt;")
 
         layout = QVBoxLayout(self)
@@ -82,6 +81,12 @@ class DialogoSelezioneLayout(QDialog):
         layout.addWidget(
             QLabel("<b>Seleziona i layout di stampa da includere:</b><br>(Tieni premuto CTRL o MAIUSC per selezioni multiple)")
         )
+
+        # Barra di ricerca layout
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("🔍 Digita per filtrare i layout...")
+        self.search_input.textChanged.connect(self.filter_layouts)
+        layout.addWidget(self.search_input)
 
         self.list_widget = QListWidget()
         self.list_widget.setSelectionMode(QAbstractItemView.MultiSelection)
@@ -93,6 +98,13 @@ class DialogoSelezioneLayout(QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
+
+    def filter_layouts(self, text):
+        text_lower = text.lower()
+        for i in range(self.list_widget.count()):
+            item = self.list_widget.item(i)
+            match = text_lower in item.text().lower()
+            item.setHidden(not match)
 
     def get_selected_layouts(self):
         return [item.text() for item in self.list_widget.selectedItems()]
@@ -142,7 +154,7 @@ def run():
         QMessageBox.warning(None, "Attenzione", "Nessun layer trovato nel progetto.")
         return
 
-    # 1. Scelta operazione e layer con barra di ricerca
+    # 1. Scelta operazione e layer con ricerca
     dialog_azione = DialogoAzioneELayer(layer_names)
     if dialog_azione.exec_() != QDialog.Accepted:
         return
@@ -152,7 +164,7 @@ def run():
         QMessageBox.warning(None, "Attenzione", "Nessun layer selezionato.")
         return
 
-    # 2. Scelta dei layout di stampa
+    # 2. Scelta dei layout di stampa con ricerca
     all_layouts = manager.printLayouts()
     layout_names_list = [l.name() for l in all_layouts]
 

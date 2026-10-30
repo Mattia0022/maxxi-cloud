@@ -3,7 +3,8 @@ from qgis.utils import iface
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit,
-    QListWidget, QListWidgetItem, QMessageBox, QInputDialog, QLabel, QAbstractItemView
+    QListWidget, QListWidgetItem, QMessageBox, QInputDialog, QLabel, 
+    QAbstractItemView, QTabWidget, QWidget, QTextBrowser
 )
 from qgis.core import QgsProject
 
@@ -11,7 +12,7 @@ class GestoreTemiVerticale(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Gestione Rapida Layer-Temi (Verticale)")
-        self.resize(1000, 650)
+        self.resize(1150, 700)
         self.setStyleSheet("font-size: 11pt;")
 
         self.project = QgsProject.instance()
@@ -66,17 +67,21 @@ class GestoreTemiVerticale(QDialog):
 
         lay_split.addLayout(lay_sinistra, 1)
 
-        # --- COLONNA DESTRA: TEMI (IN VERTICALE) ---
-        lay_destra = QVBoxLayout()
-        lay_destra.addWidget(QLabel("<b>2. In quali temi devono essere visibili? (Spunta/Togli):</b>"))
+        # --- COLONNA DESTRA: TAB WIDGET (Temi di Mappa + Guida) ---
+        self.tab_destra = QTabWidget()
+
+        # SCHEDA 1: ELENCO TEMI
+        w_temi = QWidget()
+        lay_temi_tab = QVBoxLayout(w_temi)
+        lay_temi_tab.addWidget(QLabel("<b>2. In quali temi devono essere visibili? (Spunta/Togli):</b>"))
         
         self.search_tema = QLineEdit()
         self.search_tema.setPlaceholderText("🔍 Cerca tema...")
         self.search_tema.textChanged.connect(self.filtra_temi)
-        lay_destra.addWidget(self.search_tema)
+        lay_temi_tab.addWidget(self.search_tema)
 
         self.list_temi = QListWidget()
-        lay_destra.addWidget(self.list_temi)
+        lay_temi_tab.addWidget(self.list_temi)
 
         # Pulsanti rapidi per la lista dei temi
         lay_temi_rec = QHBoxLayout()
@@ -86,9 +91,50 @@ class GestoreTemiVerticale(QDialog):
         btn_tutti_no.clicked.connect(lambda: self.imposta_tutti_temi(False))
         lay_temi_rec.addWidget(btn_tutti_si)
         lay_temi_rec.addWidget(btn_tutti_no)
-        lay_destra.addLayout(lay_temi_rec)
+        lay_temi_tab.addLayout(lay_temi_rec)
 
-        lay_split.addLayout(lay_destra, 1)
+        self.tab_destra.addTab(w_temi, "🗺️ Temi di Mappa")
+
+        # SCHEDA 2: GUIDA DETTAGLIATA
+        w_guida = QWidget()
+        lay_guida = QVBoxLayout(w_guida)
+        guida_browser = QTextBrowser()
+        guida_browser.setOpenExternalLinks(True)
+        guida_browser.setHtml("""
+            <h3 style='color: #0277bd; margin-top: 0;'>📖 Guida d'Uso: Gestore Temi di Mappa</h3>
+            <p>Questo strumento è progettato per gestire in modo rapido e senza scorrimenti orizzontali grandi quantità di layer (~200) su numerosi temi mappa (~40).</p>
+            
+            <hr style='border: 0; border-top: 1px solid #ccc;'>
+            
+            <h4 style='color: #333;'>1. Selezione dei Layer (a sinistra)</h4>
+            <ul>
+                <li>Usa la casella <b>🔍 Cerca layer...</b> per filtrare rapidamente l'elenco.</li>
+                <li>Puoi selezionare <b>un singolo layer</b> oppure <b>più layer insieme</b> tenendo premuto <code>CTRL</code> o <code>SHIFT</code>.</li>
+            </ul>
+
+            <h4 style='color: #333;'>2. Gestione delle Spunte (scheda 'Temi di Mappa')</h4>
+            <ul>
+                <li>Selezionando uno o più layer, la colonna di destra mostrerà lo stato: un tema ha la spunta solo se <b>tutti</b> i layer selezionati sono visibili in esso.</li>
+                <li><b>Spunta o rimuovi la spunta</b> dai temi in cui vuoi aggiungere o togliere i layer selezionati.</li>
+                <li>Usa i pulsanti in basso <b>Spunta Tutti / Togli Tutti</b> o la ricerca rapida dei temi per velocizzare l'operazione.</li>
+            </ul>
+
+            <h4 style='color: #333;'>3. Salvataggio delle Modifiche</h4>
+            <ul>
+                <li>Dopo aver configurato le spunte, clicca sul pulsante verde in alto a destra: <br><b>💾 Salva Modifiche per i Layer Selezionati</b>.</li>
+                <li>Il sistema aggiornerà istantaneamente il progetto QGIS, accendendo automaticamente anche i gruppi genitori necessari per la corretta visualizzazione.</li>
+            </ul>
+
+            <h4 style='color: #333;'>4. Creazione ed Eliminazione Temi</h4>
+            <ul>
+                <li><b>➕ Crea Nuovo Tema:</b> Registra un nuovo tema basato sullo stato attuale della mappa.</li>
+                <li><b>🗑️ Elimina Tema...:</b> Cancella un tema esistente dal progetto.</li>
+            </ul>
+        """)
+        lay_guida.addWidget(guida_browser)
+        self.tab_destra.addTab(w_guida, "ℹ️ Guida Dettagliata")
+
+        lay_split.addWidget(self.tab_destra, 1)
         main_layout.addLayout(lay_split)
 
         self.carica_layers()
@@ -144,7 +190,6 @@ class GestoreTemiVerticale(QDialog):
             visible_layers = self.themes.mapThemeVisibleLayers(tema_name)
             visible_ids = {l.id() for l in visible_layers if l}
             
-            # Il tema è spuntato se TUTTI i layer selezionati sono visibili in esso
             tutti_visibili = all(layer_id in visible_ids for layer_id in selected_layer_ids)
             item_tema.setCheckState(Qt.Checked if tutti_visibili else Qt.Unchecked)
 
@@ -192,14 +237,12 @@ class GestoreTemiVerticale(QDialog):
         root = self.project.layerTreeRoot()
         model = iface.layerTreeView().layerTreeModel()
 
-        # Raccoglie lo stato desiderato per ciascun tema dalla lista di destra
         temi_stati = {}
         for i in range(self.list_temi.count()):
             item_tema = self.list_temi.item(i)
             tema_name = item_tema.data(Qt.UserRole)
             temi_stati[tema_name] = (item_tema.checkState() == Qt.Checked)
 
-        # Applica le modifiche tema per tema
         for tema_name, deve_essere_visibile in temi_stati.items():
             self.themes.applyTheme(tema_name, root, model)
 

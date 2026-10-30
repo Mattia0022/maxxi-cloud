@@ -151,63 +151,59 @@ class GestoreTemiVerticale(QDialog):
         model = iface.layerTreeView().layerTreeModel()
         self.cache_stati = {}
 
-        def collect_keys(node):
-            keys = []
-            for child in node.children():
-                if isinstance(child, QgsLayerTreeGroup):
-                    keys.append(f"G:{self.get_group_path(child)}")
-                    keys.extend(collect_keys(child))
-                elif isinstance(child, QgsLayerTreeLayer):
-                    if child.layer():
-                        keys.append(f"L:{child.layer().id()}")
-            return keys
-
-        all_keys = collect_keys(root)
-        for k in all_keys:
-            self.cache_stati[k] = set()
+        # Raccoglie tutte le chiavi (gruppi e layer)
+        stack = list(root.children())
+        while stack:
+            child = stack.pop()
+            if isinstance(child, QgsLayerTreeGroup):
+                self.cache_stati[f"G:{self.get_group_path(child)}"] = set()
+                stack.extend(child.children())
+            elif isinstance(child, QgsLayerTreeLayer):
+                if child.layer():
+                    self.cache_stati[f"L:{child.layer().id()}"] = set()
 
         for tema_name in tema_names:
             clone_root = root.clone()
             self.themes.applyTheme(tema_name, clone_root, model)
 
-            def check_clone_node(node):
-                for child in node.children():
-                    if isinstance(child, QgsLayerTreeGroup):
-                        g_key = f"G:{self.get_group_path(child)}"
-                        if child.itemVisibilityChecked():
-                            self.cache_stati[g_key].add(tema_name)
-                        check_clone_node(child)
-                    elif isinstance(child, QgsLayerTreeLayer):
-                        layer = child.layer()
-                        if layer:
-                            l_key = f"L:{layer.id()}"
-                            if child.itemVisibilityChecked():
-                                self.cache_stati[l_key].add(tema_name)
-
-            check_clone_node(clone_root)
+            stack = list(clone_root.children())
+            while stack:
+                child = stack.pop()
+                if isinstance(child, QgsLayerTreeGroup):
+                    g_key = f"G:{self.get_group_path(child)}"
+                    if child.itemVisibilityChecked() and g_key in self.cache_stati:
+                        self.cache_stati[g_key].add(tema_name)
+                    stack.extend(child.children())
+                elif isinstance(child, QgsLayerTreeLayer):
+                    layer = child.layer()
+                    if layer:
+                        l_key = f"L:{layer.id()}"
+                        if child.itemVisibilityChecked() and l_key in self.cache_stati:
+                            self.cache_stati[l_key].add(tema_name)
 
     def carica_elementi_albero(self):
         self.list_layers.blockSignals(True)
         self.list_layers.clear()
         root = self.project.layerTreeRoot()
 
-        def add_nodes(node, indent=0):
-            for child in node.children():
-                prefix = "    " * indent
-                if isinstance(child, QgsLayerTreeGroup):
-                    item = QListWidgetItem(f"{prefix}📁 {child.name()}")
-                    item.setData(Qt.UserRole, f"G:{self.get_group_path(child)}")
-                    item.setForeground(Qt.darkBlue)
+        stack = [(child, 0) for child in reversed(root.children())]
+        while stack:
+            child, indent = stack.pop()
+            prefix = "    " * indent
+            if isinstance(child, QgsLayerTreeGroup):
+                item = QListWidgetItem(f"{prefix}📁 {child.name()}")
+                item.setData(Qt.UserRole, f"G:{self.get_group_path(child)}")
+                item.setForeground(Qt.darkBlue)
+                self.list_layers.addItem(item)
+                for sub_child in reversed(child.children()):
+                    stack.append((sub_child, indent + 1))
+            elif isinstance(child, QgsLayerTreeLayer):
+                layer = child.layer()
+                if layer:
+                    item = QListWidgetItem(f"{prefix} 📄 {layer.name()}")
+                    item.setData(Qt.UserRole, f"L:{layer.id()}")
                     self.list_layers.addItem(item)
-                    add_nodes(child, indent + 1)
-                elif isinstance(child, QgsLayerTreeLayer):
-                    layer = child.layer()
-                    if layer:
-                        item = QListWidgetItem(f"{prefix} 📄 {layer.name()}")
-                        item.setData(Qt.UserRole, f"L:{layer.id()}")
-                        self.list_layers.addItem(item)
 
-        add_nodes(root)
         self.list_layers.blockSignals(False)
         if self.list_layers.count() > 0:
             self.list_layers.setCurrentRow(0)
@@ -315,22 +311,20 @@ class GestoreTemiVerticale(QDialog):
             clone_root = root.clone()
             self.themes.applyTheme(nome, clone_root, model)
             
-            def check_new_theme_node(node):
-                for child in node.children():
-                    if isinstance(child, QgsLayerTreeGroup):
-                        g_key = f"G:{self.get_group_path(child)}"
-                        if child.itemVisibilityChecked():
-                            if g_key in self.cache_stati:
-                                self.cache_stati[g_key].add(nome)
-                        check_new_theme_node(child)
-                    elif isinstance(child, QgsLayerTreeLayer):
-                        layer = child.layer()
-                        if layer:
-                            l_key = f"L:{layer.id()}"
-                            if child.itemVisibilityChecked():
-                                if l_key in self.cache_stati:
-                                    self.cache_stati[l_key].add(nome)
-            check_new_theme_node(clone_root)
+            stack = list(clone_root.children())
+            while stack:
+                child = stack.pop()
+                if isinstance(child, QgsLayerTreeGroup):
+                    g_key = f"G:{self.get_group_path(child)}"
+                    if child.itemVisibilityChecked() and g_key in self.cache_stati:
+                        self.cache_stati[g_key].add(nome)
+                    stack.extend(child.children())
+                elif isinstance(child, QgsLayerTreeLayer):
+                    layer = child.layer()
+                    if layer:
+                        l_key = f"L:{layer.id()}"
+                        if child.itemVisibilityChecked() and l_key in self.cache_stati:
+                            self.cache_stati[l_key].add(nome)
 
             self.carica_temi_struttura()
             QMessageBox.information(self, "Successo", f"Tema '{nome}' creato con successo!")
@@ -364,10 +358,23 @@ class GestoreTemiVerticale(QDialog):
         for tema_name in tema_names:
             self.themes.applyTheme(tema_name, root, model)
 
-            def apply_cache_to_node(node):
-                for child in node.children():
-                    if isinstance(child, QgsLayerTreeGroup):
-                        key = f"G:{self.get_group_path(child)}"
+            stack = list(root.children())
+            while stack:
+                child = stack.pop()
+                if isinstance(child, QgsLayerTreeGroup):
+                    key = f"G:{self.get_group_path(child)}"
+                    deve_essere_visibile = (tema_name in self.cache_stati.get(key, set()))
+                    child.setItemVisibilityChecked(deve_essere_visibile)
+                    if deve_essere_visibile:
+                        p = child.parent()
+                        while p and p != root:
+                            p.setItemVisibilityChecked(True)
+                            p = p.parent()
+                    stack.extend(child.children())
+                elif isinstance(child, QgsLayerTreeLayer):
+                    layer = child.layer()
+                    if layer:
+                        key = f"L:{layer.id()}"
                         deve_essere_visibile = (tema_name in self.cache_stati.get(key, set()))
                         child.setItemVisibilityChecked(deve_essere_visibile)
                         if deve_essere_visibile:
@@ -375,20 +382,6 @@ class GestoreTemiVerticale(QDialog):
                             while p and p != root:
                                 p.setItemVisibilityChecked(True)
                                 p = p.parent()
-                        apply_cache_to_node(child)
-                    elif isinstance(child, QgsLayerTreeLayer):
-                        layer = child.layer()
-                        if layer:
-                            key = f"L:{layer.id()}"
-                            deve_essere_visibile = (tema_name in self.cache_stati.get(key, set()))
-                            child.setItemVisibilityChecked(deve_essere_visibile)
-                            if deve_essere_visibile:
-                                p = child.parent()
-                                while p and p != root:
-                                    p.setItemVisibilityChecked(True)
-                                    p = p.parent()
-
-            apply_cache_to_node(root)
 
             rec = self.themes.createThemeFromCurrentState(root, model)
             self.themes.insert(tema_name, rec)

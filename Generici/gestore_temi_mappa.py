@@ -4,7 +4,7 @@ from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit,
     QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
-    QInputDialog, QLabel
+    QInputDialog, QLabel, QAbstractItemView
 )
 from qgis.core import QgsProject
 
@@ -12,7 +12,7 @@ class MatriceTemiLayer(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Matrice Completa: Layer & Temi di Mappa")
-        self.resize(1100, 650)
+        self.resize(1150, 700)
         self.setStyleSheet("font-size: 11pt;")
 
         self.project = QgsProject.instance()
@@ -39,27 +39,42 @@ class MatriceTemiLayer(QDialog):
         lay_top.addStretch()
 
         btn_salva = QPushButton("💾 Salva Tutte le Modifiche")
-        btn_salva.setStyleSheet("background-color: #e8f5e9; font-weight: bold; padding: 6px; border-radius: 4px;")
+        btn_salva.setStyleSheet("background-color: #e8f5e9; font-weight: bold; padding: 8px 12px; border-radius: 4px;")
         btn_salva.clicked.connect(self.salva_tutto)
         lay_top.addWidget(btn_salva)
 
         layout.addLayout(lay_top)
 
         # ----------------------------------------------------
-        # BARRA DI RICERCA LAYER
+        # BARRA DI RICERCA E AZIONI RAPIDE IN MASSA
         # ----------------------------------------------------
-        lay_search = QHBoxLayout()
-        lay_search.addWidget(QLabel("🔍 Cerca Layer:"))
+        lay_tools = QHBoxLayout()
+        
+        lay_tools.addWidget(QLabel("🔍 Cerca:"))
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Filtra per nome layer...")
         self.search_input.textChanged.connect(self.filtra_tabella)
-        lay_search.addWidget(self.search_input)
-        layout.addLayout(lay_search)
+        lay_tools.addWidget(self.search_input, 2)
+
+        # Pulsanti rapidi per gestire più layer su TUTTI i temi in un click
+        btn_tutti_si = QPushButton("✔ Spunta Sel. in TUTTI i Temi")
+        btn_tutti_si.setStyleSheet("background-color: #e0f7fa; padding: 5px;")
+        btn_tutti_si.clicked.connect(lambda: self.imposta_selezionati_in_tutti(True))
+        lay_tools.addWidget(btn_tutti_si)
+
+        btn_tutti_no = QPushButton("✖ Togli da TUTTI i Temi")
+        btn_tutti_no.setStyleSheet("background-color: #fce4ec; padding: 5px;")
+        btn_tutti_no.clicked.connect(lambda: self.imposta_selezionati_in_tutti(False))
+        lay_tools.addWidget(btn_tutti_no)
+
+        layout.addLayout(lay_tools)
 
         # ----------------------------------------------------
         # TABELLA A MATRICE (Layer x Temi)
         # ----------------------------------------------------
         self.tabella = QTableWidget()
+        self.tabella.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tabella.setSelectionMode(QAbstractItemView.ExtendedSelection)
         layout.addWidget(self.tabella)
 
         self.carica_dati()
@@ -117,6 +132,23 @@ class MatriceTemiLayer(QDialog):
             if item:
                 match = text_lower in item.text().lower()
                 self.tabella.setRowHidden(r, not match)
+
+    def imposta_selezionati_in_tutti(self, stato):
+        righe_sel = set(item.row() for item in self.tabella.selectedItems())
+        if not righe_sel:
+            QMessageBox.warning(self, "Attenzione", "Seleziona una o più righe di layer nella tabella (puoi usare CTRL o SHIFT).")
+            return
+        
+        state_chk = Qt.Checked if stato else Qt.Unchecked
+        self.tabella.blockSignals(True)
+        for r in righe_sel:
+            if not self.tabella.isRowHidden(r):
+                for c in range(1, self.tabella.columnCount()):
+                    item = self.tabella.item(r, c)
+                    if item:
+                        item.setCheckState(state_chk)
+        self.tabella.blockSignals(False)
+        QMessageBox.information(self, "Fatto", f"Stato aggiornato per i layer delle {len(righe_sel)} righe selezionate. Ricorda di cliccare 'Salva Tutte le Modifiche' in alto!")
 
     def crea_tema(self):
         nome, ok = QInputDialog.getText(self, "Nuovo Tema", "Inserisci il nome del nuovo tema di mappa:")
@@ -182,16 +214,17 @@ class MatriceTemiLayer(QDialog):
         QMessageBox.information(self, "Completato", "Tutte le modifiche ai temi sono state salvate con successo!")
 
 def run():
-    global maxxi_matrice_dlg
-    try:
-        if maxxi_matrice_dlg.isVisible():
-            maxxi_matrice_dlg.raise_()
-            maxxi_matrice_dlg.activateWindow()
-            return
-    except (NameError, RuntimeError):
-        pass
+    # Gestione finestra singola (evita duplicati)
+    if hasattr(iface, "maxxi_matrice_dlg") and iface.maxxi_matrice_dlg is not None:
+        try:
+            if iface.maxxi_matrice_dlg.isVisible():
+                iface.maxxi_matrice_dlg.raise_()
+                iface.maxxi_matrice_dlg.activateWindow()
+                return
+        except RuntimeError:
+            pass
 
-    maxxi_matrice_dlg = MatriceTemiLayer(iface.mainWindow())
-    maxxi_matrice_dlg.show()
+    iface.maxxi_matrice_dlg = MatriceTemiLayer(iface.mainWindow())
+    iface.maxxi_matrice_dlg.show()
 
 run()

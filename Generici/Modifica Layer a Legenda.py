@@ -72,7 +72,7 @@ class DialogoSelezioneLayout(QDialog):
     def __init__(self, layout_names, parent=None):
         super().__init__(parent)
         self.setWindowTitle("1. Selezione Layout di Stampa - QGIS")
-        self.resize(550, 520)  # Finestra leggermente più alta
+        self.resize(550, 520)
         self.setStyleSheet("font-size: 11pt;")
 
         layout = QVBoxLayout(self)

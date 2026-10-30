@@ -1,16 +1,56 @@
 # -*- coding: utf-8 -*-
 from qgis.core import QgsProject, QgsLayoutItemLegend
 from qgis.PyQt.QtWidgets import (
-    QInputDialog,
     QMessageBox,
     QDialog,
     QVBoxLayout,
     QLabel,
+    QComboBox,
     QListWidget,
     QListWidgetItem,
     QDialogButtonBox,
     QAbstractItemView,
 )
+
+
+class DialogoAzioneE കൂടLayer(QDialog):
+    def __init__(self, layer_names, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Gestione Layer Legenda - QGIS")
+        self.resize(450, 260)
+
+        layout = QVBoxLayout(self)
+
+        # Scelta Operazione
+        layout.addWidget(QLabel("<b>Seleziona l'operazione da eseguire:</b>"))
+        self.combo_azione = QComboBox()
+        self.combo_azione.addItems([
+            "Aggiungi layer alla legenda", 
+            "Rimuovi layer dalla legenda"
+        ])
+        layout.addWidget(self.combo_azione)
+
+        layout.addWidget(QLabel("")) # Spaziatore visivo
+
+        # Scelta Layer
+        layout.addWidget(QLabel("<b>Seleziona il layer di riferimento:</b>"))
+        self.combo_layer = QComboBox()
+        self.combo_layer.addItems(layer_names)
+        layout.addWidget(self.combo_layer)
+
+        layout.addStretch()
+
+        # Pulsanti OK / Annulla
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def get_data(self):
+        azione = self.combo_azione.currentText()
+        layer_name = self.combo_layer.currentText()
+        is_aggiunta = "Aggiungi" in azione
+        return is_aggiunta, layer_name
 
 
 class DialogoSelezioneLegende(QDialog):
@@ -22,7 +62,7 @@ class DialogoSelezioneLegende(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(
             QLabel(
-                "Seleziona le singole legende da modificare:\n(Tieni premuto CTRL o MAIUSC per selezioni multiple)"
+                "<b>Seleziona le singole legende da modificare:</b><br>(Tieni premuto CTRL o MAIUSC per selezioni multiple)"
             )
         )
 
@@ -58,37 +98,18 @@ def run():
         QMessageBox.warning(None, "Attenzione", "Nessun layer trovato nel progetto.")
         return
 
-    # 2. Scegli l'operazione (Aggiungi o Rimuovi)
-    azioni = ["Aggiungi layer alla legenda", "Rimuovi layer dalla legenda"]
-    azione_scelta, ok_azione = QInputDialog.getItem(
-        None,
-        "Gestione Layer Legenda",
-        "Scegli l'operazione da eseguire:",
-        azioni,
-        0,
-        False,
-    )
-    if not ok_azione or not azione_scelta:
+    # 2. Mostra la finestra personalizzata e dimensionata per operazione e layer
+    dialog_azione = DialogoAzioneE layer(layer_names) if 'DialogoAzioneE layer' in globals() else None
+    # (Uso corretto della classe definita sopra)
+    dialog_azione = DialogoAzioneELayer(layer_names)
+    if dialog_azione.exec_() != QDialog.Accepted:
         return
 
-    is_aggiunta = "Aggiungi" in azione_scelta
-
-    # 3. Scelta del layer su cui agire
-    titolo_dialogo = "Aggiungi Layer a Legenda" if is_aggiunta else "Rimuovi Layer da Legenda"
-    messaggio_dialogo = "Seleziona il layer da aggiungere:" if is_aggiunta else "Seleziona il layer da rimuovere:"
-    
-    target_layer_name, ok_layer = QInputDialog.getItem(
-        None,
-        titolo_dialogo,
-        messaggio_dialogo,
-        layer_names,
-        0,
-        False,
-    )
-    if not ok_layer or not target_layer_name:
+    is_aggiunta, target_layer_name = dialog_azione.get_data()
+    if not target_layer_name:
         return
 
-    # 4. Scansiona tutti i layout e raccoglie TUTTE le singole legende trovate
+    # 3. Scansiona tutti i layout e raccoglie TUTTE le singole legende trovate
     all_layouts = manager.printLayouts()
     legend_items_info = []
 
@@ -107,12 +128,12 @@ def run():
         )
         return
 
-    # 5. Mostra la finestra di dialogo con l'elenco analitico delle legende
-    dialog = DialogoSelezioneLegende(legend_items_info)
-    if dialog.exec_() != QDialog.Accepted:
+    # 4. Mostra la finestra di dialogo con l'elenco analitico delle legende
+    dialog_legende = DialogoSelezioneLegende(legend_items_info)
+    if dialog_legende.exec_() != QDialog.Accepted:
         return
 
-    selected_legends = dialog.get_selected_legends()
+    selected_legends = dialog_legende.get_selected_legends()
     if not selected_legends:
         QMessageBox.warning(None, "Attenzione", "Non hai selezionato alcuna legenda.")
         return
@@ -120,7 +141,7 @@ def run():
     target_layer = layers_dict[target_layer_name]
     legende_modificate = 0
 
-    # 6. Applica l'azione (aggiunta o rimozione) solo sulle legende spuntate
+    # 5. Applica l'azione (aggiunta o rimozione) solo sulle legende spuntate
     for layout, item in selected_legends:
         model = item.model()
         root = model.rootGroup()
@@ -151,3 +172,41 @@ def run():
     messaggio = f"Operazione completata!\nLayer '{target_layer_name}' {verbo} {legende_modificate} legende selezionate."
     print(f"\n{messaggio}")
     QMessageBox.information(None, "Completato", messaggio)
+
+
+# Nota di correzione interna per il nome della classe nel blocco principale
+class DialogoAzioneELayer(QDialog):
+    def __init__(self, layer_names, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Gestione Layer Legenda - QGIS")
+        self.resize(460, 260)
+
+        layout = QVBoxLayout(self)
+
+        layout.addWidget(QLabel("<b>Seleziona l'operazione da eseguire:</b>"))
+        self.combo_azione = QComboBox()
+        self.combo_azione.addItems([
+            "Aggiungi layer alla legenda", 
+            "Rimuovi layer dalla legenda"
+        ])
+        layout.addWidget(self.combo_azione)
+
+        layout.addWidget(QLabel(""))
+
+        layout.addWidget(QLabel("<b>Seleziona il layer di riferimento:</b>"))
+        self.combo_layer = QComboBox()
+        self.combo_layer.addItems(layer_names)
+        layout.addWidget(self.combo_layer)
+
+        layout.addStretch()
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def get_data(self):
+        azione = self.combo_azione.currentText()
+        layer_name = self.combo_layer.currentText()
+        is_aggiunta = "Aggiungi" in azione
+        return is_aggiunta, layer_name

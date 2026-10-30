@@ -16,7 +16,7 @@ class DialogoAzioneELayer(QDialog):
     def __init__(self, layer_names, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Gestione Layer Legenda - QGIS")
-        self.resize(460, 260)
+        self.resize(640, 400)
 
         layout = QVBoxLayout(self)
 

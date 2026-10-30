@@ -24,11 +24,6 @@
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/Esportazione%20in%20serie%20gruppo%20kml_kmz.py",
       "descrizione": "Esporta in serie i layer vettoriali di un gruppo selezionato in formato KML o KMZ, riproiettandoli automaticamente in EPSG:32632.",
       "guida": "1. Seleziona il gruppo di layer nel pannello laterale.<br>2. Spunta i layer desiderati dalla finestra di dialogo.<br>3. Scegli il formato e la cartella di destinazione per completare l'esportazione."
-    },
-    "Inserimento foto per etichette": {
-      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Generici/inserimento_foto_per_etichette.py",
-      "descrizione": "Crea o aggiorna i campi FOTO, POS_X e POS_Y (in formato decimale) su layer vettoriali multipli, associando automaticamente i percorsi delle immagini tramite corrispondenza di attributi.",
-      "guida": "1. Seleziona uno o più layer vettoriali dalla lista (usa la ricerca rapida).<br>2. Scegli la colonna della tabella attributi da confrontare con i nomi delle foto.<br>3. Seleziona le immagini dal computer e avvia l'elaborazione."
     }
   },
   "Ambiente": {
@@ -74,5 +69,11 @@
     }
   },
   "Impianti": {},
-  "Strutture": {}
+  "Strutture": {
+    "Inserimento foto per etichette": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Strutture/Inserimento%20foto%20per%20etichette.py",
+      "descrizione": "Crea o aggiorna i campi FOTO, POS_X e POS_Y in formato decimale su layer vettoriali multipli, associando automaticamente i percorsi delle immagini tramite corrispondenza di attributi.",
+      "guida": "1. Seleziona uno o più layer vettoriali dalla lista (usa la ricerca rapida).<br>2. Scegli la colonna della tabella attributi da confrontare con i nomi delle foto.<br>3. Seleziona le immagini dal computer e avvia l'elaborazione."
+    }
+  }
 }

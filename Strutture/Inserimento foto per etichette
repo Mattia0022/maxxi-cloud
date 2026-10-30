@@ -188,7 +188,7 @@ class InserimentoFotoEtichetteDialog(QDialog):
         3. <b>Collega le Foto:</b> Clicca su 'Sfoglia Foto' per selezionare le immagini dal computer.<br><br>
         4. <b>Esegui:</b> Il tool creerà o aggiornerà i campi <b>FOTO</b>, <b>POS_X</b> e <b>POS_Y</b> (in formato decimale), associando i percorsi corretti!
         """
-        guida_finale = guida_testo if guida_testo else default_guidar
+        guida_finale = guida_testo if guida_testo else default_guida
         txt_guida.setHtml(f"<div style='color: #333333; font-size: 12px; line-height: 1.5;'>{guida_finale}</div>")
         txt_guida.setStyleSheet("background-color: #ffffff; color: #222222; border: 1px solid #cccccc; border-radius: 4px; padding: 8px;")
         layout_dx.addWidget(txt_guida)

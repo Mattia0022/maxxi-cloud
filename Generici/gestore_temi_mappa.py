@@ -135,17 +135,18 @@ class GestoreTemiVerticale(QDialog):
                 self.list_temi.item(i).setCheckState(Qt.Unchecked)
             return
 
-        # Prende il primo layer selezionato come riferimento per mostrare lo stato attuale
-        primo_layer_id = selected_items[0].data(Qt.UserRole)
+        selected_layer_ids = [item.data(Qt.UserRole) for item in selected_items]
         
         for i in range(self.list_temi.count()):
             item_tema = self.list_temi.item(i)
             tema_name = item_tema.data(Qt.UserRole)
             
             visible_layers = self.themes.mapThemeVisibleLayers(tema_name)
-            visibile = any(l.id() == primo_layer_id for l in visible_layers if l)
+            visible_ids = {l.id() for l in visible_layers if l}
             
-            item_tema.setCheckState(Qt.Checked if visibile else Qt.Unchecked)
+            # Il tema è spuntato se TUTTI i layer selezionati sono visibili in esso
+            tutti_visibili = all(layer_id in visible_ids for layer_id in selected_layer_ids)
+            item_tema.setCheckState(Qt.Checked if tutti_visibili else Qt.Unchecked)
 
     def imposta_tutti_temi(self, stato):
         state_chk = Qt.Checked if stato else Qt.Unchecked
@@ -215,6 +216,7 @@ class GestoreTemiVerticale(QDialog):
             rec = self.themes.createThemeFromCurrentState(root, model)
             self.themes.insert(tema_name, rec)
 
+        iface.mapCanvas().refresh()
         QMessageBox.information(self, "Completato", f"Stato aggiornato con successo per i {len(layer_ids)} layer selezionati in tutti i temi!")
 
 def run():

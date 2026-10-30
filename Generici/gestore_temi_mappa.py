@@ -182,8 +182,16 @@ class MatriceTemiLayer(QDialog):
         QMessageBox.information(self, "Completato", "Tutte le modifiche ai temi sono state salvate con successo!")
 
 def run():
-    dlg = MatriceTemiLayer(iface.mainWindow())
-    dlg.show()
-    iface.maxxi_matrice_temi_dlg = dlg
+    global maxxi_matrice_dlg
+    try:
+        if maxxi_matrice_dlg.isVisible():
+            maxxi_matrice_dlg.raise_()
+            maxxi_matrice_dlg.activateWindow()
+            return
+    except (NameError, RuntimeError):
+        pass
+
+    maxxi_matrice_dlg = MatriceTemiLayer(iface.mainWindow())
+    maxxi_matrice_dlg.show()
 
 run()

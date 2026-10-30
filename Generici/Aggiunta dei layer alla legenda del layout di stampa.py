@@ -72,7 +72,7 @@ class DialogoSelezioneLayout(QDialog):
     def __init__(self, layout_names, parent=None):
         super().__init__(parent)
         self.setWindowTitle("1. Selezione Layout di Stampa - QGIS")
-        self.resize(550, 480)
+        self.resize(550, 520)  # Finestra leggermente più alta
         self.setStyleSheet("font-size: 11pt;")
 
         layout = QVBoxLayout(self)
@@ -82,7 +82,7 @@ class DialogoSelezioneLayout(QDialog):
             QLabel("<b>Seleziona i layout di stampa da includere:</b><br>(Tieni premuto CTRL o MAIUSC per selezioni multiple)")
         )
 
-        # Barra di ricerca layout
+        # Barra di ricerca layout esplicita
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("🔍 Digita per filtrare i layout...")
         self.search_input.textChanged.connect(self.filter_layouts)

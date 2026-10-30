@@ -65,22 +65,11 @@ class MatriceTemiLayer(QDialog):
         self.carica_dati()
 
     def get_visibilita_layer_in_tema(self, theme_name, layer_id):
-        state = self.themes.mapThemeState(theme_name)
-        visibile = False
-        is_in_tema = False
-        for rec in state.layerRecords():
+        record = self.themes.mapThemeState(theme_name)
+        for rec in record.layerRecords():
             if rec.layer() and rec.layer().id() == layer_id:
-                is_in_tema = True
-                if rec.isVisible:
-                    visibile = True
-                break
-        if not is_in_tema:
-            tree_group = state.toGroup()
-            if tree_group:
-                node = tree_group.findLayer(layer_id)
-                if node and node.isVisible():
-                    visibile = True
-        return visibile
+                return rec.isVisible
+        return False
 
     def carica_dati(self):
         self.tabella.blockSignals(True)
@@ -100,7 +89,6 @@ class MatriceTemiLayer(QDialog):
             self.tabella.blockSignals(False)
             return
 
-        # Colonne: Colonna 0 = Nome Layer, Colonne successive = Temi mappa
         columns = ["Layer Progetto"] + tema_names
         self.tabella.setColumnCount(len(columns))
         self.tabella.setHorizontalHeaderLabels(columns)
@@ -111,13 +99,11 @@ class MatriceTemiLayer(QDialog):
         self.tabella.setRowCount(len(layers))
 
         for r_idx, layer in enumerate(layers):
-            # Nome Layer (Colonna 0)
             item_layer = QTableWidgetItem(layer.name())
             item_layer.setData(Qt.UserRole, layer.id())
             item_layer.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             self.tabella.setItem(r_idx, 0, item_layer)
 
-            # Checkbox per ogni Tema (Colonne successive)
             for c_idx, tema_name in enumerate(tema_names, start=1):
                 visibile = self.get_visibilita_layer_in_tema(tema_name, layer.id())
                 item_chk = QTableWidgetItem()
@@ -171,7 +157,6 @@ class MatriceTemiLayer(QDialog):
             QMessageBox.warning(self, "Attenzione", "Nessun tema da aggiornare.")
             return
 
-        # Legge lo stato della tabella e aggiorna ciascun tema
         for c_idx, tema_name in enumerate(tema_names, start=1):
             self.themes.applyTheme(tema_name, root, model)
 
@@ -188,7 +173,6 @@ class MatriceTemiLayer(QDialog):
                     node = root.findLayer(layer_id)
                     if node:
                         node.setItemVisibilityChecked(deve_essere_visibile)
-                        # Accende automaticamente i gruppi genitori se il layer viene attivato
                         if deve_essere_visibile:
                             p = node.parent()
                             while p and p != root:

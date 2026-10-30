@@ -109,7 +109,7 @@ class GestoreTemiVerticale(QDialog):
             
             <h4 style='color: #333;'>1. Selezione Elementi</h4>
             <ul>
-                <li>Puoi selezionare sia singoli <b>Layer</b> che interi <b>Gruppi</b> (usa <code>CTRL</code> o <code>SHIFT</code> per selezioni multiple).</li>
+                <li>Seleziona singoli <b>Layer</b> o interi <b>Gruppi/Sottogruppi</b> (usa <code>CTRL</code> o <code>SHIFT</code>).</li>
             </ul>
 
             <h4 style='color: #333;'>2. Modifiche in Memoria</h4>
@@ -120,7 +120,7 @@ class GestoreTemiVerticale(QDialog):
 
             <h4 style='color: #333;'>3. Salvataggio Definitivo</h4>
             <ul>
-                <li>Solo quando hai finito, clicca in alto su <b>💾 Salva Tutte le Modifiche nel Progetto</b> per applicarle a QGIS.</li>
+                <li>Quando hai finito, clicca in alto su <b>💾 Salva Tutte le Modifiche nel Progetto</b> per applicarle a QGIS.</li>
             </ul>
 
             <h4 style='color: #333;'>4. Gestione Temi</h4>
@@ -151,7 +151,7 @@ class GestoreTemiVerticale(QDialog):
         model = iface.layerTreeView().layerTreeModel()
         self.cache_stati = {}
 
-        # Raccoglie tutte le chiavi (gruppi e layer)
+        # Raccoglie tutte le chiavi (gruppi, sottogruppi e layer)
         stack = list(root.children())
         while stack:
             child = stack.pop()

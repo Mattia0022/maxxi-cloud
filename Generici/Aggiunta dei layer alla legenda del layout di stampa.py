@@ -16,11 +16,12 @@ class DialogoAzioneELayer(QDialog):
     def __init__(self, layer_names, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Gestione Layer Legenda - QGIS")
-        self.resize(640, 400)
+        self.resize(520, 320)  # Finestra iniziale ampia e comoda
 
         layout = QVBoxLayout(self)
+        layout.setSpacing(10)
 
-        layout.addWidget(QLabel("<b>Seleziona l'operazione da eseguire:</b>"))
+        layout.addWidget(QLabel("Seleziona l'operazione da eseguire:"))
         self.combo_azione = QComboBox()
         self.combo_azione.addItems([
             "Aggiungi layer alla legenda", 
@@ -28,9 +29,7 @@ class DialogoAzioneELayer(QDialog):
         ])
         layout.addWidget(self.combo_azione)
 
-        layout.addWidget(QLabel(""))
-
-        layout.addWidget(QLabel("<b>Seleziona il layer di riferimento:</b>"))
+        layout.addWidget(QLabel("Seleziona il layer di riferimento:"))
         self.combo_layer = QComboBox()
         self.combo_layer.addItems(layer_names)
         layout.addWidget(self.combo_layer)
@@ -53,13 +52,13 @@ class DialogoSelezioneLegende(QDialog):
     def __init__(self, legend_items_info, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Selezione Specifica Legende - QGIS")
-        self.resize(500, 450)
+        self.resize(550, 450)  # Finestra spaziosa per la lista
 
         layout = QVBoxLayout(self)
+        layout.setSpacing(10)
+        
         layout.addWidget(
-            QLabel(
-                "<b>Seleziona le singole legende da modificare:</b><br>(Tieni premuto CTRL o MAIUSC per selezioni multiple)"
-            )
+            QLabel("Seleziona le singole legende da modificare:\n(Tieni premuto CTRL o MAIUSC per selezioni multiple)")
         )
 
         self.list_widget = QListWidget()

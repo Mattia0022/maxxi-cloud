@@ -71,7 +71,7 @@
   "Impianti": {},
   "Strutture": {
     "Inserimento foto per etichette": {
-      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Strutture/inserimento_foto_per_etichette.py",
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Strutture/Inserimento%20foto%20per%20etichette.py",
       "descrizione": "Crea o aggiorna i campi FOTO, POS_X e POS_Y in formato decimale su layer vettoriali multipli, associando automaticamente i percorsi delle immagini tramite corrispondenza di attributi.",
       "guida": "1. Seleziona uno o più layer vettoriali dalla lista (usa la ricerca rapida).<br>2. Scegli la colonna della tabella attributi da confrontare con i nomi delle foto.<br>3. Seleziona le immagini dal computer e avvia l'elaborazione."
     }

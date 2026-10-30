@@ -7,6 +7,7 @@ from qgis.PyQt.QtWidgets import (
     QVBoxLayout,
     QLabel,
     QComboBox,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QDialogButtonBox,
@@ -17,12 +18,13 @@ class DialogoAzioneELayer(QDialog):
     def __init__(self, layer_names, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Gestione Layer Legenda - QGIS")
-        self.resize(650, 380)
-        self.setStyleSheet("font-size: 13pt;")
+        self.resize(550, 480)
+        self.setStyleSheet("font-size: 11pt;")
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(15)
+        layout.setSpacing(10)
 
+        # Scelta Operazione
         layout.addWidget(QLabel("<b>Seleziona l'operazione da eseguire:</b>"))
         self.combo_azione = QComboBox()
         self.combo_azione.addItems([
@@ -31,21 +33,38 @@ class DialogoAzioneELayer(QDialog):
         ])
         layout.addWidget(self.combo_azione)
 
-        layout.addWidget(QLabel("<b>Seleziona il layer di riferimento:</b>"))
-        self.combo_layer = QComboBox()
-        self.combo_layer.addItems(layer_names)
-        layout.addWidget(self.combo_layer)
+        # Ricerca e Selezione Layer
+        layout.addWidget(QLabel("<b>Cerca e seleziona il layer di riferimento:</b>"))
+        
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("🔍 Digita per filtrare i layer...")
+        self.search_input.textChanged.connect(self.filter_layers)
+        layout.addWidget(self.search_input)
 
-        layout.addStretch()
+        self.list_layer = QListWidget()
+        self.list_layer.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.all_layers = layer_names
+        for name in layer_names:
+            self.list_layer.addItem(QListWidgetItem(name))
+        layout.addWidget(self.list_layer)
 
+        # Pulsanti OK / Annulla
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
+    def filter_layers(self, text):
+        self.list_layer.clear()
+        text_lower = text.lower()
+        for name in self.all_layers:
+            if text_lower in name.lower():
+                self.list_layer.addItem(QListWidgetItem(name))
+
     def get_data(self):
         azione = self.combo_azione.currentText()
-        layer_name = self.combo_layer.currentText()
+        selected_items = self.list_layer.selectedItems()
+        layer_name = selected_items[0].text() if selected_items else None
         is_aggiunta = "Aggiungi" in azione
         return is_aggiunta, layer_name
 
@@ -54,11 +73,11 @@ class DialogoSelezioneLayout(QDialog):
     def __init__(self, layout_names, parent=None):
         super().__init__(parent)
         self.setWindowTitle("1. Selezione Layout di Stampa - QGIS")
-        self.resize(650, 500)
-        self.setStyleSheet("font-size: 12pt;")
+        self.resize(550, 450)
+        self.setStyleSheet("font-size: 11pt;")
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
+        layout.setSpacing(10)
         
         layout.addWidget(
             QLabel("<b>Seleziona i layout di stampa da includere:</b><br>(Tieni premuto CTRL o MAIUSC per selezioni multiple)")
@@ -83,14 +102,14 @@ class DialogoSelezioneLegende(QDialog):
     def __init__(self, legend_choices, parent=None):
         super().__init__(parent)
         self.setWindowTitle("2. Selezione Legenda da Modificare - QGIS")
-        self.resize(650, 450)
-        self.setStyleSheet("font-size: 12pt;")
+        self.resize(550, 400)
+        self.setStyleSheet("font-size: 11pt;")
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
+        layout.setSpacing(10)
         
         layout.addWidget(
-            QLabel("<b>Seleziona il tipo di legenda da modificare nei layout scelti:</b><br>(Se più layout hanno lo stesso nome/ID di legenda, basterà selezionarlo una sola volta)")
+            QLabel("<b>Seleziona il tipo di legenda da modificare nei layout scelti:</b><br>(Le legende con lo stesso nome sono raggruppate in un'unica voce)")
         )
 
         self.list_widget = QListWidget()
@@ -123,13 +142,14 @@ def run():
         QMessageBox.warning(None, "Attenzione", "Nessun layer trovato nel progetto.")
         return
 
-    # 1. Scelta operazione e layer (finestra grande)
+    # 1. Scelta operazione e layer con barra di ricerca
     dialog_azione = DialogoAzioneELayer(layer_names)
     if dialog_azione.exec_() != QDialog.Accepted:
         return
 
     is_aggiunta, target_layer_name = dialog_azione.get_data()
     if not target_layer_name:
+        QMessageBox.warning(None, "Attenzione", "Nessun layer selezionato.")
         return
 
     # 2. Scelta dei layout di stampa
@@ -149,8 +169,7 @@ def run():
         QMessageBox.warning(None, "Attenzione", "Non hai selezionato alcun layout.")
         return
 
-    # 3. Raggruppa le legende per nome/ID univoco presenti SOLO nei layout selezionati
-    # Mappa: chiave_legenda -> lista di coppie (layout, item_legenda)
+    # 3. Raggruppa le legende per nome/ID univoco presenti nei layout selezionati
     legend_groups = {}
     
     for layout in all_layouts:
@@ -160,7 +179,6 @@ def run():
                     leg_name = item.displayName() if hasattr(item, 'displayName') and item.displayName() else "Legenda"
                     leg_id = item.id() if item.id() else "Senza ID"
                     
-                    # Chiave per unificare legende identiche
                     legend_key = (leg_name, leg_id)
                     desc_str = f"Oggetto Legenda: '{leg_name}' (ID: {leg_id})"
                     

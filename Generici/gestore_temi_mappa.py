@@ -65,11 +65,8 @@ class MatriceTemiLayer(QDialog):
         self.carica_dati()
 
     def get_visibilita_layer_in_tema(self, theme_name, layer_id):
-        record = self.themes.mapThemeState(theme_name)
-        for rec in record.layerRecords():
-            if rec.layer() and rec.layer().id() == layer_id:
-                return rec.isVisible
-        return False
+        visible_layers = self.themes.mapThemeVisibleLayers(theme_name)
+        return any(layer.id() == layer_id for layer in visible_layers)
 
     def carica_dati(self):
         self.tabella.blockSignals(True)

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from qgis.core import QgsProject, QgsLayoutItemLegend
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import (
     QMessageBox,
     QDialog,
@@ -16,7 +17,7 @@ class DialogoAzioneELayer(QDialog):
     def __init__(self, layer_names, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Gestione Layer Legenda - QGIS")
-        self.resize(520, 320)  # Finestra iniziale ampia e comoda
+        self.resize(520, 320)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(10)
@@ -52,7 +53,7 @@ class DialogoSelezioneLegende(QDialog):
     def __init__(self, legend_items_info, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Selezione Specifica Legende - QGIS")
-        self.resize(550, 450)  # Finestra spaziosa per la lista
+        self.resize(550, 450)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(10)
@@ -64,11 +65,11 @@ class DialogoSelezioneLegende(QDialog):
         self.list_widget = QListWidget()
         self.list_widget.setSelectionMode(QAbstractItemView.MultiSelection)
         
-        self.mapping = {}
         for info_str, layout_obj, legend_item in legend_items_info:
             item_widget = QListWidgetItem(info_str)
+            # Memorizza i dati direttamente nell'elemento tramite Qt.UserRole
+            item_widget.setData(Qt.UserRole, (layout_obj, legend_item))
             self.list_widget.addItem(item_widget)
-            self.mapping[item_widget] = (layout_obj, legend_item)
 
         layout.addWidget(self.list_widget)
 
@@ -78,7 +79,8 @@ class DialogoSelezioneLegende(QDialog):
         layout.addWidget(buttons)
 
     def get_selected_legends(self):
-        return [self.mapping[item] for item in self.list_widget.selectedItems()]
+        # Recupera i dati associati agli elementi selezionati
+        return [item.data(Qt.UserRole) for item in self.list_widget.selectedItems()]
 
 
 def run():

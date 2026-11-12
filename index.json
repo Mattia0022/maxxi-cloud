@@ -41,39 +41,8 @@
       "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Ambiente/Cropt%20immagine%20ed%20inserimento%20in%20layout%20di%20stampa.py",
       "descrizione": "Ritaglia in serie le legende da immagini di tavole con interfaccia interattiva e le inserisce automaticamente nei layout di stampa corrispondenti di QGIS.",
       "guida": "1. Seleziona le immagini delle tavole e la cartella di output.<br>2. Ritaglia la legenda (puoi riutilizzare il ritaglio precedente per i file successivi).<br>3. Scegli se inserire automaticamente le immagini risultanti nei layout di stampa."
-    }
-  },
-  "Architettura": {
-    "Impaginazione su ProA": {
-      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Architettura/Impaginazione%20su%20ProA.py",
-      "descrizione": "Rinomina e numera in serie le immagini e le invia automaticamente a ProA per l'impaginazione rapida in ambiente CAD.",
-      "guida": "1. Seleziona la cartella di origine con le immagini.<br>2. Seleziona la cartella di destinazione per le immagini pulite.<br>3. Apri il file in ProA e avvia lo script per generare i layout."
-    }
-  },
-  "Civile": {},
-  "Droni": {
-    "Gestione Foto e Layout": {
-      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/gestione_foto_plugin.py",
-      "descrizione": "Ottimizza l'archiviazione, l'associazione e l'impaginazione rapida delle fotografie aeree da drone all'interno dei layout cartografici.",
-      "guida": "1. Specifica la directory di origine contenente le foto georeferenziate.<br>2. Verifica l'associazione degli scatti con i punti o i vettori.<br>3. Genera la struttura grafica o il report di stampa."
     },
-    "Rinomina File Metashape": {
-      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/rinomina_file_metashape.py",
-      "descrizione": "Rinomina automaticamente e in blocco i file di piano o gli elaborati da Agisoft Metashape secondo le convenzioni di nomenclatura standard.",
-      "guida": "1. Seleziona la cartella di lavoro contenente i file da elaborare.<br>2. Controlla l'anteprima delle modifiche nella tabella di riscontro.<br>3. Clicca su 'Applica Rinominazione' per confermare."
-    },
-    "Sezioni trasversali a partire dai punti GNSS": {
-      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Droni/Sezioni%20trasversali%20a%20partire%20dai%20punti%20GNSS.py",
-      "descrizione": "Estrae le coordinate e le quote da punti GNSS selezionati per generare script AutoCAD (.scr) di profili e sezioni trasversali proiettate.",
-      "guida": "1. Seleziona il layer di punti e i punti desiderati sulla mappa.<br>2. Scegli la colonna della quota o la geometria 3D.<br>3. Salva e genera lo script AutoCAD."
-    }
-  },
-  "Impianti": {},
-  "Strutture": {
-    "Inserimento foto per etichette": {
-      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Strutture/Inserimento%20foto%20per%20etichette.py",
-      "descrizione": "Crea o aggiorna i campi FOTO, POS_X e POS_Y in formato decimale su layer vettoriali multipli, associando automaticamente i percorsi delle immagini tramite corrispondenza di attributi.",
-      "guida": "1. Seleziona uno o più layer vettoriali dalla lista (usa la ricerca rapida).<br>2. Scegli la colonna della tabella attributi da confrontare con i nomi delle foto.<br>3. Seleziona le immagini dal computer e avvia l'elaborazione."
-    }
-  }
-}
+    "Duplicazione e aggiornamento layout in serie": {
+      "url": "https://raw.githubusercontent.com/Mattia0022/maxxi-cloud/main/Ambiente/Duplicazione%20e%20aggiornamento%20layout%20in%20serie.py",
+      "descrizione": "Duplica un layout master di stampa in serie associandolo a differenti temi mappa, aggiornando selettivamente le singole mappe interne con una comoda interfaccia guidata.",
+      "guida": "1. Seleziona il layout master di partenza e le mappe interne da aggiornare.<br>2. Inserisci il prefisso desider
